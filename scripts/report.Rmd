@@ -10,7 +10,6 @@ output:
     toc_float: true
 params:
   proj_runid: default 
-
 ---
 
 ```{r setup, include=FALSE}
@@ -135,7 +134,7 @@ process_chanwb <- function(chanwb_path, Wshed_Area_m2){
 
 ```{r, echo=FALSE}
 wshed_area_m2= get_WatershedArea_m2(paste0(
-          "/geodata/weppcloud_runs/"
+          "/geodata/weppcloud_runs/",
           params$proj_runid,
           "/wepp/output/",
           "loss_pw0.txt"
@@ -190,7 +189,13 @@ process_ebe <- function(ebe_path, yr_start, yr_end){
 ```{r echo=FALSE,message=FALSE,warning=FALSE}
 ### totalwatsed
 
-totalwatseddf <- data.table::fread(paste0("/geodata/weppcloud_runs/", params$proj_runid, "/wepp/totalwatsed.csv"))
+totalwatsed_fn = paste0("/geodata/weppcloud_runs/", params$proj_runid, "/export/totalwatsed.csv")
+
+if (file.exists(totalwatsed_fn)) {
+    totalwatseddf <- data.table::fread(totalwatsed_fn)
+} else {
+    totalwatseddf <- data.table::fread(paste0("https://wepp.cloud/weppcloud/runs/", params$proj_runid, "/cfg/resources/wepp/totalwatsed.csv"))
+}
 
 ```
 
