@@ -1,0 +1,45 @@
+
+<style>
+.wrapper{
+        position: relative;
+        clear: both;
+    }
+    
+.column-left{
+  float: left;
+  width: 28%;
+  text-align: left;
+}
+
+.column-left-alt{
+  float: left;
+  width: 70%;
+  text-align: left;
+}
+
+.column-center{
+  display: inline-block;
+  width: 2%;
+  text-align: center;
+}
+
+.column-right{
+  float: right;
+  width: 70%;
+  text-align: right;
+}
+
+.column-right-alt{
+  float: right;
+  width: 28%;
+  text-align: right;
+}
+
+.bigger { font-size:350%;
+          color: #B9615D;
+          font-weight: bold;
+}
+
+.big_txt { font-size:120%;}
+
+</style>
