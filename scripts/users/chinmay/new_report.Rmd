@@ -1,0 +1,385 @@
+---
+title: "`r paste0('A report generated for', ' PLACEHOLDER', ' WEPPcloud run')`"
+date: "`r Sys.Date()`"
+output: 
+  cleanrmd::html_document_clean:
+    css: "styles.css"
+    fig_caption: true
+    theme: axist
+    mathjax: default
+    use_fontawesome: true
+    toc: true
+    toc_float: true
+params:
+  proj_runid: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, include=FALSE}
+sys.source("weppcloudr_report_functions.R",envir = knitr::knit_global())
+```
+
+```{r include=FALSE}
+library(tidyverse, quietly = TRUE)
+library(cleanrmd, quietly = TRUE)
+library(plotly, quietly = TRUE)
+library(furrr, quietly = TRUE)
+library(janitor, quietly = TRUE)
+library(cleanrmd, quietly = TRUE)
+library(echarts4r, quietly = TRUE)
+library(DT, quietly = TRUE)
+library(leaflet, quietly = TRUE)
+library(data.table, quietly = TRUE)
+library(leafsync, quietly = TRUE)
+
+```
+
+<!-- ######################### GENERATE REPORT ##################################-->
+
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+subcatchments = read_subcatchments(params$proj_runid)
+```
+
+
+```{r, echo=FALSE, message=FALSE,warning=FALSE}
+lulc_dt = summarize_subcatch_by_var(subcatchments, "landuse")
+soil_dt = summarize_subcatch_by_var(subcatchments, "soil")
+texture_dt = summarize_subcatch_by_var(subcatchments, "Texture")
+gradient_dt = summarize_subcatch_by_var(subcatchments, "gradient")
+```
+
+### Land Cover & Soils 
+
+Land use, soil type and corresponding texture and gradient are displayed in the maps below. `r lulc_dt$Landuse[1]` is the dominant land cover type occupying `r lulc_dt$Area[1]`% of the watershed. `r lulc_dt$Landuse[2]` ocupues the second largest fraction of the total land cover of the watershed amounting `r lulc_dt$Area[2]`%. Soils are primarily of `r soil_dt$Soil[1]` and  `r soil_dt$Soil[2]` type and span about `r soil_dt$Area[1]`% and `r soil_dt$Area[2]`% of the watershed area respectively. Majority (`r texture_dt$Area[1]`%) of the soils in the watershed have `r texture_dt$Texture[1]` texture followed by `r texture_dt$Texture[2]` texture. `r gradient_dt$Area[1]`% of the watershed has `r gradient_dt$Gradient[1]` followed by `r gradient_dt$Area[2]`% consisting of `r gradient_dt$Gradient[2]`.
+
+```{r, echo=FALSE,message=FALSE,warning=FALSE}
+landuse_map= make_leaflet_map(subcatchments, landuse, col_pal_type = "Factor")
+soil_map= make_leaflet_map(subcatchments, soil, col_pal_type = "Factor")
+texture_map= make_leaflet_map(subcatchments, Texture, col_pal_type = "Factor")
+gradient_map= make_leaflet_map(subcatchments, gradient, col_pal_type = "Factor")
+leafsync::sync(landuse_map,
+               soil_map, 
+               texture_map,
+               gradient_map, 
+               ncol = 2,
+               sync = "all")
+
+```
+
+
+```{r, echo=FALSE,message=FALSE,warning=FALSE}
+### totalwatsed
+
+totalwatseddf <- process_totalwatsed(params$proj_runid)
+
+totalwatsed_wy_mean_df = totalwatseddf %>%
+          dplyr::select(-julian,-year,-Date,-mo,-da) %>%
+          dplyr::group_by(WY) %>%
+          dplyr::summarise_all(mean)
+
+totalwatsed_wbal = totwatsed_to_wbal(totalwatseddf)
+
+```
+
+<div style="clear: both;"></div>
+
+### Hydrology
+
+This watershed received an average annual precipitation of `r round(totalwatsed_wbal$value[1])` mm over the simulation period. 
+
+```{r, echo=FALSE,message=FALSE,warning=FALSE}
+totalwatsed_wbal =totalwatsed_wbal %>% dplyr::filter(variable != "Precipitation (mm)") %>% dplyr::arrange(-value)
+```
+
+
+#### Watershed water balance 
+
+Large fraction of water was lost to `r totalwatsed_wbal$variable[2]` amounting  to `r round(totalwatsed_wbal$value[2])`% followed by `r totalwatsed_wbal$variable[3]` amounting to `r round(totalwatsed_wbal$value[3])`%.  
+
+```{r, echo=FALSE,message=FALSE,warning=FALSE, fig.cap="Hydrologic components"}
+totalwatsed_wbal%>%
+            echarts4r::e_charts(variable)  %>%
+            echarts4r::e_pie(
+                value,
+                radius = c("55%", "70%")
+            )%>%
+          echarts4r::e_tooltip()%>% e_theme("dark")
+```
+
+
+#### Hillslope water balance  
+
+Figure below shows a long term (simulation period) change in storage for individual each simulated hillslope in the watershed.  
+
+```{r, echo=FALSE, message=FALSE,warning=FALSE}
+
+watfilepaths <- gethillwatfiles(params$proj_runid)
+future::plan(multisession, workers = 6)
+watbal<- furrr::future_map(watfilepaths, calc_watbal)%>%
+  dplyr::bind_rows() %>%
+  dplyr::mutate_if(is.list, purrr::simplify_all) %>%
+  tidyr::unnest(cols = c("wb", "WeppID"))
+shp <- get_geometry(params$proj_runid)
+Hwatbal_spdf = dplyr::left_join(shp, watbal, by = c("WeppID")) %>% dplyr::rename("wepp_id" = "WeppID")
+```
+
+```{r, echo=FALSE, fig.cap="Change in storage (mm) for each hillslope."}
+make_leaflet_map(Hwatbal_spdf, wb,col_pal_type = "Numeric",unit = "mm")
+
+```
+
+#### Composition of streamflow
+
+```{r, echo=FALSE,message=FALSE,warning=FALSE}
+wshed_area_m2= get_WatershedArea_m2(params$proj_runid)
+```
+
+
+
+```{r, echo=FALSE, message=FALSE,warning=FALSE}
+chanwb = process_chanwb(params$proj_runid,
+                  wshed_area_m2)
+
+chanwb_WY_mean = chanwb %>%
+          dplyr::select(-Year_chan,
+                        -Day_chan,
+                        -Chan_ID_chan,
+                        -Elmt_ID_chan,
+                        -Date) %>%
+          dplyr::group_by(WY) %>%
+          dplyr::summarise_all(mean)
+```
+
+```{r, echo=FALSE, message=FALSE,warning=FALSE}
+yr_min= as.character(min(unique(chanwb$Year_chan)))
+yr_max= as.character(max(unique(chanwb$Year_chan)))
+```
+
+
+```{r, echo=FALSE, message=FALSE,warning=FALSE}
+ebe = process_ebe(params$proj_runid,
+                  yr_min,
+                  yr_max)
+
+ebe_WY_mean = ebe %>%
+          dplyr::select(-Date,-Day_ebe,-Month_ebe,-Year_ebe) %>%
+          dplyr::group_by(WY) %>%
+          dplyr::summarise_all(mean)
+```
+```{r, echo=FALSE, message=FALSE,warning=FALSE}
+merged_daily_df = merge_daily_Vars(totalwatseddf, chanwb, ebe)
+merged_WY = dplyr::left_join(totalwatsed_wy_mean_df, chanwb_WY_mean, by = c("WY")) %>%
+          dplyr::left_join(ebe_WY_mean, by = c("WY")) %>%
+          dplyr::mutate(PercentRunoff = (runoff_mm / (runoff_mm+lateral_flow_mm+baseflow_mm)) * 100,
+                        PercentLateral = (lateral_flow_mm / (runoff_mm+lateral_flow_mm+baseflow_mm)) *100,
+                        PercentBaseflow = (baseflow_mm / (runoff_mm+lateral_flow_mm+baseflow_mm) )*100)
+
+perc_flow = merged_WY %>%
+          dplyr::select(WY, PercentRunoff, PercentLateral, PercentBaseflow)%>% dplyr::mutate(WY = as.Date(paste0(WY,"-12-31")))
+
+perc_flow1 = merged_WY %>%
+          dplyr::select(WY, PercentRunoff, PercentLateral, PercentBaseflow)%>% reshape2::melt(id.vars = "WY")
+```
+
+
+
+Figure below shows total simulated streamflow for each water year divided into baseflow, lateral flow, and runoff, and percentage of each relative to the streamflow. For the entire simulation period the average baseflow was `r round(mean(perc_flow$PercentBaseflow))`%, lateral flow was `r round(mean(perc_flow$PercentLateral))`%, and runoff was `r round(mean(perc_flow$PercentRunoff))`%. 
+
+```{r, echo=FALSE, message=FALSE,warning=FALSE}
+
+perc_flow %>%
+      echarts4r::e_charts(x = WY) %>%
+      echarts4r::e_area(PercentBaseflow, name = "Baseflow (% relative to streamflow)") %>%
+      echarts4r::e_area(PercentLateral, name = "Lateral Flow (% relative to streamflow)") %>%
+      echarts4r::e_area(PercentRunoff, name = "Runoff (% relative to streamflow)") %>%
+      echarts4r::e_tooltip(trigger = "axis")%>% e_theme("dark")
+```
+
+
+
+```{r, echo = FALSE, message=FALSE, warning=FALSE}
+# fig <- plot_ly(perc_flow1, x = ~WY, y = ~value, type = 'bar', name = 'Baseflow (% relative to streamflow)')
+# fig <- fig %>% add_trace(y = ~PercentLateral, name = 'Lateral')
+# fig <- fig %>% layout(yaxis = list(title = 'Count'), barmode = 'stack')
+# 
+# fig <- plot_ly(
+#   perc_flow1,
+#   x = ~ WY,
+#   y = ~ value,
+#   color = ~ variable,
+#   type = "bar",
+#   # colors = ~ colorRampPalette(c("#ffa500","#3eb489"))(length(unique(variable)) + 1)[-1],
+#   legendgroup =  ~ variable,
+#   showlegend = TRUE
+# )%>%
+#   layout(
+#     title = list(text = '', x = 0),
+#     barmode = 'stack'
+#     # legend = list(itemclick = FALSE, itemdoubleclick = FALSE)
+#   )
+# 
+# 
+# fig
+```
+
+
+
+```{r, echo=FALSE, message=FALSE,warning=FALSE}
+runoff_cp_df= gen_cumulative_plt_df(subcatchments, runoff_mm)
+sd_yd_cp_df= gen_cumulative_plt_df(subcatchments, Sediment_Yield_kg)
+tp_cp_df = gen_cumulative_plt_df(subcatchments, Total_Phosphorus_kg)
+```
+
+### Runoff from the watershed
+
+<div id="wrapper">
+
+`r if(sum(runoff_cp_df$cum_runoff_mm)==0) {"<!--"}`
+<div class="column-left">
+
+<span class='bigger'>
+`r round(tail(df_head_percent(runoff_cp_df, 30),1)[,4])`% </span> <span class='big_txt'> `r stringr::str_to_title(stringr::str_split(colnames(runoff_cp_df)[4],"_")[[1]][2])` is generated by
+`r round(tail(df_head_percent(runoff_cp_df, 30),1)[,3])`% watershed area.</span>
+</div>
+`r if(sum(runoff_cp_df$cum_runoff_mm)==0) {"-->"}`
+
+<div class="column-center"> </div>
+
+<div class="column-right">
+```{r, echo=FALSE, message=FALSE,warning=FALSE}
+
+gp_runoff = runoff_cp_df %>%
+      echarts4r::e_charts(x = cumPercArea) %>%
+      echarts4r::e_area(cum_runoff_mm, name = stringr::str_to_title(stringr::str_split(colnames(runoff_cp_df)[4],"_")[[1]][2]))%>%
+      echarts4r::e_tooltip(trigger = "axis")%>%e_theme("dark")%>%
+  e_axis_labels(x="Area (%)",
+                y = paste(stringr::str_to_title(stringr::str_split(colnames(runoff_cp_df)[4],"_")[[1]][2]), "(%)", sep = " "))
+
+
+gp_runoff
+
+``` 
+
+
+</div>
+
+</div>
+
+<div style="clear: both;"></div>
+
+
+<!-- ##############################Sediment###################################### -->
+<div style="clear: both;"></div>
+
+
+### Sediments from the watershed
+
+<div id="wrapper">
+
+<div class="column-right-alt">
+
+<span class='bigger'>
+`r round(tail(df_head_percent(sd_yd_cp_df, 30),1)[,4])`% </span> <span class='big_txt'> `r stringr::str_split(colnames(sd_yd_cp_df)[4],"_")[[1]][2]` `r stringr::str_split(colnames(sd_yd_cp_df)[4],"_")[[1]][3]` is contributed by
+`r round(tail(df_head_percent(sd_yd_cp_df, 30),1)[,3])`% watershed area.</span>
+</div>
+
+<div class="column-center"> </div>
+
+<div class="column-left-alt">
+```{r, echo=FALSE, message=FALSE,warning=FALSE}
+
+gp_sed = sd_yd_cp_df %>%
+      echarts4r::e_charts(x = cumPercArea) %>%
+      echarts4r::e_area(cum_Sediment_Yield_kg, 
+                        name =paste(stringr::str_split(colnames(sd_yd_cp_df)[4],"_")[[1]][2], stringr::str_split(colnames(sd_yd_cp_df)[4],"_")[[1]][3], sep = " "))%>%
+      echarts4r::e_tooltip(trigger = "axis")%>%e_theme("dark")%>%
+  e_axis_labels(x="Area (%)",
+                y= paste(stringr::str_split(colnames(sd_yd_cp_df)[4],"_")[[1]][2], stringr::str_split(colnames(sd_yd_cp_df)[4],"_")[[1]][3], "(%)", sep = " "))
+
+
+gp_sed
+
+``` 
+
+</div>
+
+</div>
+
+<div style="clear: both;"></div>
+
+
+<!-- ##############################TP###################################### -->
+<div style="clear: both;"></div>
+
+
+### Total Phosphorus from the watershed
+
+<div id="wrapper">
+
+<div class="column-left">
+
+<span class='bigger'>
+`r round(tail(df_head_percent(tp_cp_df, 30),1)[,4])`% </span> <span class='big_txt'> `r stringr::str_split(colnames(tp_cp_df)[4],"_")[[1]][2]` `r stringr::str_split(colnames(tp_cp_df)[4],"_")[[1]][3]` is contributed by
+`r round(tail(df_head_percent(tp_cp_df, 30),1)[,3])`% watershed area. </span>
+</div>
+
+<div class="column-center"> </div>
+
+<div class="column-right">
+```{r, echo=FALSE, message=FALSE,warning=FALSE}
+
+gp_tp = tp_cp_df %>%
+      echarts4r::e_charts(x = cumPercArea) %>%
+      echarts4r::e_area(cum_Total_Phosphorus_kg, 
+                        name =paste(stringr::str_split(colnames(tp_cp_df)[4],"_")[[1]][2], stringr::str_split(colnames(tp_cp_df)[4],"_")[[1]][3], sep = " "))%>%
+      echarts4r::e_tooltip(trigger = "axis")%>%e_theme("dark")%>%
+  e_axis_labels(
+    x = "Area (%)",
+    y = paste(stringr::str_split(colnames(tp_cp_df)[4],"_")[[1]][2], stringr::str_split(colnames(tp_cp_df)[4],"_")[[1]][3], "(%)", sep = " ")
+  )
+
+
+gp_tp
+
+``` 
+</div>
+
+<div style="clear: both;"></div>
+
+### Timeseries plots
+
+#### Water year plot
+<div style="clear: both;"></div>
+<!-- relative relativerelativerelativerelativerelativerelativerelativerelative -->
+
+<!-- </div> -->
+```{r, echo=FALSE, message=FALSE,warning=FALSE}
+merged_WY_plt = merged_WY %>% dplyr::select(WY, Q_outlet_mm,
+                                            Sediment_tonnes_ebe,
+                                            SRP_tonnes_ebe,PP_tonnes_ebe,
+                                            TP_tonnes_ebe)%>% reshape2::melt(id.vars = "WY")
+```
+
+```{r, echo=FALSE, message=FALSE,warning=FALSE}
+merged_WY_plt %>% plotly::plot_ly(x = ~WY, y = ~value, color = ~variable,
+                                  type = "scatter", mode= "line")
+```
+
+
+### Daily plot
+
+```{r, echo=FALSE, message=FALSE,warning=FALSE}
+merged_daily_df_plt = merged_daily_df %>% dplyr::select(Date, Q_outlet_mm,
+                                            Sediment_tonnes_ebe,
+                                            SRP_tonnes_ebe,PP_tonnes_ebe,
+                                            TP_tonnes_ebe)%>% reshape2::melt(id.vars = "Date")
+```
+
+```{r, echo=FALSE, message=FALSE,warning=FALSE}
+merged_daily_df_plt %>% plotly::plot_ly(x = ~Date, y = ~value, color = ~variable,
+                                  type = "scatter", mode= "line")
+```
