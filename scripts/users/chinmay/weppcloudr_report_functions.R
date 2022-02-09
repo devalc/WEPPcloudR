@@ -1,0 +1,566 @@
+## --------------------------------------------------------------------------------------##
+##
+## Script name: weppcloudr_report_functions.R
+##
+## Purpose of the script: meta functions used in the rmarkdown report.
+##
+## Author: Chinmay Deval
+##
+## Created On: 2022-01-31
+##
+## Copyright (c) Chinmay Deval, 2022
+## Email: chinmay.deval91@gmail.com
+##
+## --------------------------------------------------------------------------------------##
+##  Notes: This file along with the styles.css should be in the same folder as the
+##  rmarkdown file.
+##   
+##
+## --------------------------------------------------------------------------------------##
+
+
+## ----------------------------------Load packages---------------------------------------##
+
+
+
+## --------------------------------------------------------------------------------------##
+
+gethillwatfiles<- function(runid){
+  link <- paste0("/geodata/weppcloud_runs/", runid,"/wepp/output/")
+  if (file.exists(link)) {
+    wat_dat <- list.files(link, "*\\.wat.dat$", full.names=TRUE)
+    
+  }else{
+    link = paste0("https://wepp.cloud/weppcloud/runs/", runid,"/cfg/browse/wepp/output/")
+    pg <- rvest::read_html(link)
+    wat_dat <- rvest::html_attr(rvest::html_nodes(pg, "a"), "href") %>%
+      stringr::str_subset(".wat.dat", negate = FALSE)
+    wat_dat <- paste0(link, wat_dat)
+    
+  }
+  
+  
+  return(wat_dat)
+}
+
+## --------------------------------------------------------------------------------------##
+
+calc_watbal <- function(link){
+  a <- read.table(link, skip = 23,
+                  col.names = c("OFE",	"J",	"Y",	"P",	"RM",	"Q",	"Ep",	"Es",
+                                "Er",	"Dp",	"UpStrmQ",	"SubRIn",	"latqcc",
+                                "Total_Soil_Water",	"frozwt",	"Snow_Water",	"QOFE",
+                                "Tile",	"Irr",	"Area")) %>%
+    dplyr::mutate_if(is.character,as.numeric)
+  
+  
+  a <- a %>%  dplyr::mutate(wb = P-Q-Ep - Es- Er - Dp - latqcc +
+                              dplyr::lag(Total_Soil_Water) - Total_Soil_Water +
+                              dplyr::lag(frozwt) - frozwt+ dplyr::lag(Snow_Water) - Snow_Water) %>%
+    dplyr::mutate(dplyr::across(where(is.numeric), round, 3)) %>% dplyr::select(wb) %>%
+    dplyr::summarise_all(.funs = sum, na.rm = TRUE) %>%
+    dplyr::mutate(WeppID =readr::parse_number(gsub("^.*/", "", link)))
+  
+  return(as.data.frame(a))
+}
+
+
+## --------------------------------------------------------------------------------------##
+ 
+
+get_geometry <- function(runid){
+  
+  link <- paste0("/geodata/weppcloud_runs/", runid, "/export/arcmap/subcatchments.json")
+  
+    
+  if (file.exists(link)) {
+    geometry <- sf::st_read(link,quiet = TRUE)%>%
+      dplyr::select(WeppID, geometry) %>%
+      sf::st_transform(4326) %>%
+      dplyr::group_by(WeppID)%>%
+      dplyr::summarize(geometry = sf::st_union(geometry))
+  }else{
+  
+  link <- paste0("https://wepp.cloud/weppcloud/runs/",
+                 runid,
+                 "/cfg/browse/export/arcmap/subcatchments.json")
+  geometry <- sf::st_read(link,quiet = TRUE)%>%
+    dplyr::select(WeppID, geometry) %>%
+    sf::st_transform(4326) %>%
+    dplyr::group_by(WeppID)%>%
+    dplyr::summarize(geometry = sf::st_union(geometry))
+  
+  }
+  return(geometry)
+  
+}
+
+## --------------------------------------------------------------------------------------##
+
+get_WatershedArea_m2 <- function(runid){
+  #
+  fn = paste0(
+    "/geodata/weppcloud_runs/",
+    runid,
+    "/wepp/output/",
+    "loss_pw0.txt"
+  )
+  
+  if (file.exists(fn)) {
+    getstring<- grep("Total contributing area to outlet ",
+                     readLines(fn), value = TRUE)
+    getstring <- getstring[[1]]
+    num <- readr::parse_number(getstring)
+    num <- as.numeric(num) * 10000 ##convert ha to m2
+  }
+  else{
+    fn = paste0("https://wepp.cloud/weppcloud/runs/", runid,"/cfg/browse/wepp/output/loss_pw0.txt")
+    getstring<- grep("Total contributing area to outlet ",
+                     readLines(fn), value = TRUE)
+    getstring <- getstring[[1]]
+    num <- readr::parse_number(getstring)
+    num <- as.numeric(num) * 10000 ##convert ha to m2
+    }
+  
+return(num)
+  
+}
+
+## --------------------------------------------------------------------------------------##
+
+ 
+get_WY <- function(x, numeric=TRUE) {
+  x <- as.POSIXlt(x)
+  yr <- x$year + 1900L
+  mn <- x$mon + 1L
+  ## adjust for water year
+  yr <- yr + ifelse(mn < 10L, 0L, 1L)
+  if(numeric)
+    return(yr)
+  ordered(yr)
+}
+
+
+## --------------------------------------------------------------------------------------##
+
+process_chanwb <- function(runid, Wshed_Area_m2){
+  
+  chanwb_path = paste0("/geodata/weppcloud_runs/",
+                       runid,
+                       "/wepp/output/chanwb.out"
+  )
+  
+  if (file.exists(chanwb_path)) {
+    ## read channel and watershed water and sediment data
+    
+    chanwb <- data.table::fread(chanwb_path, skip = 11, header = F)
+    
+    ### set names of the dataframes
+    
+    colnames(chanwb) <- c("Year_chan", "Day_chan", "Elmt_ID_chan",
+                          "Chan_ID_chan", "Inflow_chan", "Outflow_chan",
+                          "Storage_chan", "Baseflow_chan", "Loss_chan",
+                          "Balance_chan")
+    
+    
+    
+    chanwb <- chanwb %>% dplyr::mutate(Q_outlet_mm = (Outflow_chan/ Wshed_Area_m2 *1000),
+                                       originDate = as.Date(paste0(Year_chan, "-01-01"),tz = "UTC") - lubridate::days(1),
+                                       Date = as.Date(Day_chan, origin = originDate, tz = "UTC"),
+                                       WY = get_WY(Date)) %>% dplyr::select(-originDate) %>%
+      dplyr::select(Year_chan, Day_chan, Date, WY, everything())
+  }else{
+  
+  chanwb_path= paste0("https://wepp.cloud/weppcloud/runs/",
+                      runid,
+         "/cfg/browse/wepp/output/chanwb.out"
+  )
+  
+  ## read channel and watershed water and sediment data
+  
+  chanwb <- data.table::fread(chanwb_path, skip = 11, header = F)
+  
+  ### set names of the dataframes
+  
+  colnames(chanwb) <- c("Year_chan", "Day_chan", "Elmt_ID_chan",
+                        "Chan_ID_chan", "Inflow_chan", "Outflow_chan",
+                        "Storage_chan", "Baseflow_chan", "Loss_chan",
+                        "Balance_chan")
+  
+  
+  
+  chanwb <- chanwb %>% dplyr::mutate(Q_outlet_mm = (Outflow_chan/ Wshed_Area_m2 *1000),
+                                     originDate = as.Date(paste0(Year_chan, "-01-01"),tz = "UTC") - lubridate::days(1),
+                                     Date = as.Date(Day_chan, origin = originDate, tz = "UTC"),
+                                     WY = get_WY(Date)) %>% dplyr::select(-originDate) %>%
+    dplyr::select(Year_chan, Day_chan, Date, WY, everything())
+  
+  }
+  
+  return(as.data.frame(chanwb))
+  
+} 
+
+## --------------------------------------------------------------------------------------##
+
+read_subcatchments = function(runid){
+  link = paste0("/geodata/weppcloud_runs/", runid, "/export/arcmap/subcatchments.json")
+  
+  if(file.exists(link)){
+    subcatchments <- sf::st_read(link,quiet = TRUE) %>%
+      sf::st_transform(4326) 
+    geom_sum = subcatchments%>%
+      dplyr::group_by(WeppID)%>%
+      dplyr::summarize(geometry = sf::st_union(geometry))
+    subcatchments = subcatchments %>% as.data.frame() %>% 
+      dplyr::select(-geometry)%>% dplyr::distinct()
+    
+    geom_sum = dplyr::left_join(geom_sum, subcatchments, by =c("WeppID"))
+    
+    geom_sum[c('Soil', 'Gradient', 'Texture')] <- str_split_fixed(geom_sum$soil, ',', 3)
+    
+    geom_sum = geom_sum %>% 
+      dplyr::select(-c(wepp_id,soil))%>% 
+      janitor::clean_names()%>% 
+      dplyr::mutate(soil = stringr::str_replace(soil,pattern = "-"," "))
+    
+    geom_sum = geom_sum %>% dplyr::mutate(dplyr::across(dplyr::contains('_kg_ha'), 
+                     .fns = list(kg = ~.*area_ha)))
+    
+    colnames(geom_sum)[25:30] <- c("Particulate_Phosphorus_kg",
+                                   "Soluble_Reactive_Phosohorus_kg",
+                                   "Sediment_Deposition_kg",
+                                   "Sediment_Yield_kg",
+                                   "Soil_Loss_kg",
+                                   "Total_Phosphorus_kg")
+    
+    }else{
+      
+      link <- paste0("https://wepp.cloud/weppcloud/runs/",runid, "/cfg/browse/export/arcmap/subcatchments.json")
+      
+      subcatchments <- sf::st_read(link,quiet = TRUE) %>%
+      sf::st_transform(4326) 
+      geom_sum = subcatchments%>%
+        dplyr::group_by(WeppID)%>%
+        dplyr::summarize(geometry = sf::st_union(geometry))
+      subcatchments = subcatchments %>% as.data.frame() %>% 
+        dplyr::select(-geometry)%>% dplyr::distinct()
+    
+      geom_sum = dplyr::left_join(geom_sum, subcatchments, by =c("WeppID"))
+    
+      geom_sum[c('Soil', 'Gradient', 'Texture')] <- str_split_fixed(geom_sum$soil, ',', 3)
+    
+      geom_sum = geom_sum %>% 
+        dplyr::select(-c(wepp_id,soil))%>% 
+        janitor::clean_names()%>% 
+        dplyr::mutate(soil = stringr::str_replace(soil,pattern = "-"," "))
+  }
+  
+  geom_sum = geom_sum %>% dplyr::mutate(dplyr::across(dplyr::contains('_kg_ha'), 
+                                                      .fns = list(kg = ~.*area_ha)))
+  
+  colnames(geom_sum)[25:30] <- c("Particulate_Phosphorus_kg",
+                                 "Soluble_Reactive_Phosohorus_kg",
+                                 "Sediment_Deposition_kg",
+                                 "Sediment_Yield_kg",
+                                 "Soil_Loss_kg",
+                                 "Total_Phosphorus_kg")
+  return(geom_sum)
+}
+
+## --------------------------------------------------------------------------------------##
+
+summarize_subcatch_by_var = function(subcatch, var_to_summarize_by){
+  
+  subcatchdf = subcatch %>% 
+    as.data.frame() %>%
+    dplyr::select(-geometry)%>%
+    dplyr::group_by(.data[[var_to_summarize_by]]) %>%
+    dplyr::summarise_at(vars(area_ha), list(sum_area = sum))%>%
+    dplyr::mutate(percent_area = sum_area/sum(sum_area)*100)%>%
+    dplyr::select(-sum_area)%>%
+    dplyr::mutate(dplyr::across(where(is.numeric), round, 0)) %>%
+    dplyr::rename("Area" = "percent_area")%>%
+    dplyr::arrange(-Area)
+  
+  if(var_to_summarize_by == "landuse"){
+    subcatchdf = subcatchdf %>%
+      dplyr::rename("Landuse" = "landuse")
+    }else
+        if(var_to_summarize_by == "soil"){
+          subcatchdf = subcatchdf %>%
+            dplyr::rename("Soil" = "soil")
+          }else
+              if(var_to_summarize_by == "gradient"){
+                subcatchdf = subcatchdf %>%
+                  dplyr::rename("Gradient" = "gradient")
+                }else
+                    if(var_to_summarize_by == "Texture"){
+                      subcatchdf = subcatchdf}
+  return(subcatchdf)
+} 
+
+## --------------------------------------------------------------------------------------##
+
+gen_cumulative_plt_df <- function(subcatch, var_to_use){
+
+  var_to_use = dplyr::enquo(var_to_use)
+
+  c_plt_df = subcatch %>%
+      as.data.frame()%>%
+      dplyr::select(!!var_to_use,area_ha)%>%
+      dplyr::arrange(desc(!!var_to_use)) %>%
+      dplyr::mutate(cumPercArea = cumsum(area_ha) / sum(area_ha) *100,
+                    new_col = cumsum(!!var_to_use) / sum(!!var_to_use) *100)%>%
+    dplyr::mutate_at(vars(new_col), ~replace(., is.nan(.), 0))
+  
+  colnames(c_plt_df)[4] = paste0("cum_",colnames(c_plt_df)[1])
+  
+  
+  
+  return(c_plt_df)
+
+
+
+}
+
+
+## --------------------------------------------------------------------------------------##
+# Event by event file
+
+process_ebe <- function(runid, yr_start, yr_end){
+  
+  ebe_path = paste0("/geodata/weppcloud_runs/",
+                    runid,
+                    "/wepp/output/ebe_pw0.txt")
+  
+  if(file.exists(ebe_path)){
+    ## read channel and watershed water and sediment data
+    # , SimStartDate, SimEndDate, SimStartDate, SimEndDate
+    ebe <- data.table::fread(ebe_path, skip = 9, header = F)
+    
+    ### set names of the dataframe
+    
+    colnames(ebe) <- c("Day_ebe", "Month_ebe", "Year_ebe",
+                       "P_ebe", "Runoff_ebe", "peak_ebe", "Sediment_ebe",
+                       "SRP_ebe", "PP_ebe", "TP_ebe")
+    
+    dt_head_d = as.character(head(ebe,1)[[1]])
+    dt_head_m = as.character(head(ebe,1)[[2]])
+    dt_tail_d = as.character(tail(ebe,1)[[1]])
+    dt_tail_m = as.character(tail(ebe,1)[[2]])
+    
+    # calcs
+    ebe <- ebe %>% dplyr::mutate(Date = seq(from = as.Date(paste0(yr_start,"-",dt_head_m,"-",dt_head_d)), 
+                                            to = as.Date(paste0(yr_end,"-",dt_tail_m,"-",dt_tail_d)), by= 1),
+                                 WY = get_WY(Date),
+                                 Sediment_tonnes_ebe = Sediment_ebe/1000,
+                                 SRP_tonnes_ebe = SRP_ebe/1000,
+                                 PP_tonnes_ebe = PP_ebe/1000,
+                                 TP_tonnes_ebe = TP_ebe/1000) %>%
+      dplyr::select(Day_ebe, Month_ebe, Year_ebe, Date, WY, everything())
+  }else{
+    ## read channel and watershed water and sediment data
+    # , SimStartDate, SimEndDate, SimStartDate, SimEndDate
+    ebe <- data.table::fread(paste0("https://wepp.cloud/weppcloud/runs/",runid,
+                                    "/cfg/browse/wepp/output/ebe_pw0.txt"), skip = 9, header = F)
+    
+    ### set names of the dataframe
+    
+    colnames(ebe) <- c("Day_ebe", "Month_ebe", "Year_ebe",
+                       "P_ebe", "Runoff_ebe", "peak_ebe", "Sediment_ebe",
+                       "SRP_ebe", "PP_ebe", "TP_ebe")
+    
+    dt_head_d = as.character(head(ebe,1)[[1]])
+    dt_head_m = as.character(head(ebe,1)[[2]])
+    dt_tail_d = as.character(tail(ebe,1)[[1]])
+    dt_tail_m = as.character(tail(ebe,1)[[2]])
+    
+    # calcs
+    ebe <- ebe %>% dplyr::mutate(Date = seq(from = as.Date(paste0(yr_start,"-",dt_head_m,"-",dt_head_d)), 
+                                            to = as.Date(paste0(yr_end,"-",dt_tail_m,"-",dt_tail_d)), by= 1),
+                                 WY = get_WY(Date),
+                                 Sediment_tonnes_ebe = Sediment_ebe/1000,
+                                 SRP_tonnes_ebe = SRP_ebe/1000,
+                                 PP_tonnes_ebe = PP_ebe/1000,
+                                 TP_tonnes_ebe = TP_ebe/1000) %>%
+      dplyr::select(Day_ebe, Month_ebe, Year_ebe, Date, WY, everything())
+  }
+  
+  
+  
+  return(as.data.frame(ebe))
+  
+}
+## --------------------------------------------------------------------------------------##
+process_totalwatsed <- function(runid){
+  
+  totalwatsed_fn = paste0("/geodata/weppcloud_runs/", runid, "/export/totalwatsed.csv")
+  
+  if (file.exists(totalwatsed_fn)) {
+    totalwatseddf <- data.table::fread(totalwatsed_fn) %>% 
+      janitor::clean_names()%>%
+      dplyr::rename("WY" = "water_year")%>%
+      dplyr::mutate(Date = lubridate::make_date(year,mo,da))
+  } else {
+    totalwatseddf <- data.table::fread(paste0("https://wepp.cloud/weppcloud/runs/", runid, "/cfg/resources/wepp/totalwatsed.csv")) %>% 
+      janitor::clean_names()%>%
+      dplyr::rename("WY" = "water_year")%>%
+      dplyr::mutate(Date = lubridate::make_date(year,mo,da))
+  }
+  return(totalwatseddf)
+  # totwat = data.table::fread(paste0(runid, 
+  #                                   "resources/wepp/totalwatsed.csv")) %>% 
+  #   janitor::clean_names()%>%
+  #   dplyr::rename("WY" = "water_year")%>%
+  #   dplyr::mutate(Date = lubridate::make_date(year,mo,da))
+}
+
+## --------------------------------------------------------------------------------------##
+
+totwatsed_to_wbal = function(daily_totwatsed_df){
+  
+  totwatsed2wbal = daily_totwatsed_df %>% dplyr::select(
+    "WY",
+    "Date",
+    "precipitation_mm",
+    "rain_melt_mm",
+    "transpiration_mm",
+    "evaporation_mm",
+    "percolation_mm",
+    "runoff_mm",
+    "lateral_flow_mm"
+  )%>% dplyr::filter(Date >= paste0(lubridate::year(Date[1]),"-10-01"))
+  
+  wys = as.numeric(length(unique(totwatsed2wbal$WY)))
+  
+  totwatsed2wbal = totwatsed2wbal %>%
+    dplyr::select(- c(Date,WY))%>%
+    dplyr::summarise_all(.funs = sum) %>%
+    dplyr::mutate(
+      precipitation_mm = precipitation_mm / wys,
+      rain_melt_mm = rain_melt_mm / wys,
+      transpiration_mm = transpiration_mm / wys,
+      evaporation_mm = evaporation_mm / wys,
+      percolation_mm = percolation_mm / wys,
+      runoff_mm = runoff_mm / wys,
+      lateral_flow_mm = lateral_flow_mm / wys) %>%
+    dplyr::mutate(
+      rain_melt_mm = rain_melt_mm / precipitation_mm * 100,
+      transpiration_mm = transpiration_mm / precipitation_mm *
+        100,
+      evaporation_mm = evaporation_mm / precipitation_mm *
+        100,
+      percolation_mm = percolation_mm / precipitation_mm *
+        100,
+      runoff_mm = runoff_mm / precipitation_mm * 100,
+      lateral_flow_mm = lateral_flow_mm / precipitation_mm *
+        100,
+      WbalErr_mm = rain_melt_mm - (
+        transpiration_mm + evaporation_mm + percolation_mm + runoff_mm + lateral_flow_mm
+      )
+    ) %>%
+    dplyr::rename(
+      "Precipitation (mm)" = "precipitation_mm",
+      "Rain+Melt (%)" = "rain_melt_mm",
+      "Transpiration (%)" = "transpiration_mm",
+      "Evaporation (%)" = "evaporation_mm",
+      "Percolation (%)" = "percolation_mm",
+      "Runoff(%)" = "runoff_mm",
+      "Lateral flow(%)" = "lateral_flow_mm",
+      "Change in storage (%)" = "WbalErr_mm"
+    ) %>%
+    tidyr::gather(key = "variable") %>% 
+    dplyr::mutate(dplyr::across(where(is.numeric), round, 2))
+  
+  return(totwatsed2wbal)
+} 
+## --------------------------------------------------------------------------------------##
+ 
+merge_daily_Vars <- function(totalwatsed_df, chanwb_df, ebe_df){
+  daily<- dplyr::left_join(as.data.frame(totalwatsed_df), as.data.frame(chanwb_df), by = c("Date", "WY")) %>%
+    dplyr::left_join(as.data.frame(ebe_df),  by = c("Date", "WY")) %>%
+    dplyr::mutate_at(c("area_m_2",	"precip_vol_m_3",	"rain_melt_vol_m_3",	"transpiration_vol_m_3",
+                       "evaporation_vol_m_3",	"percolation_vol_m_3",	"runoff_vol_m_3",	"lateral_flow_vol_m_3",
+                       "storage_vol_m_3",	"sed_det_kg",	"sed_dep_kg",	"sed_del_kg",
+                       "class_1",	"class_2",	"class_3",	"class_4",	"class_5",
+                       "area_ha",	"cumulative_sed_del_tonnes",	"sed_del_density_tonne_ha",
+                       "precipitation_mm",	"rain_melt_mm",	"transpiration_mm",	"evaporation_mm",	"et_mm",
+                       "percolation_mm",	"runoff_mm",	"lateral_flow_mm",	"storage_mm",
+                       "reservoir_volume_mm",	"baseflow_mm",	"aquifer_losses_mm",
+                       "streamflow_mm",	"swe_mm",	"sed_del_tonne",	"p_load_mg",
+                       "p_runoff_mg",	"p_lateral_mg",	"p_baseflow_mg",	"total_p_kg",
+                       "particulate_p_kg",	"soluble_reactive_p_kg",	"p_total_kg_ha",	"particulate_p_kg_ha",
+                       "soluble_reactive_p_kg_ha",	"Elmt_ID_chan",	"Chan_ID_chan",	"Inflow_chan",	"Outflow_chan",
+                       "Storage_chan",	"Baseflow_chan",	"Loss_chan",	"Balance_chan",
+                       "Q_outlet_mm",	"Day_ebe",	"P_ebe",	"Runoff_ebe",	"peak_ebe",
+                       "Sediment_ebe",	"SRP_ebe",	"PP_ebe",	"TP_ebe",
+                       "Sediment_tonnes_ebe",	"SRP_tonnes_ebe",	"PP_tonnes_ebe",
+                       "TP_tonnes_ebe"),as.numeric)
+  return(daily)
+} 
+
+## --------------------------------------------------------------------------------------##
+## subset percent rows from dataframe head or tail
+  
+df_head_percent <- function(x, percent) {
+  
+  head(x, ceiling( nrow(x)*percent/100)) 
+}
+
+# last percent of a dataframe
+df_tail_percent <- function(x, percent) {
+  # need validation of input x and percent!! 
+  tail(x, ceiling( nrow(x)*percent/100)) 
+}
+
+## --------------------------------------------------------------------------------------##
+make_leaflet_map = function(plot_df, plot_var, col_pal_type, unit = NULL){
+  v <- dplyr::enquo(plot_var)
+  
+  if (col_pal_type == "Factor") {
+    pal <- colorFactor(palette = "inferno", dplyr::pull(plot_df, !!v))
+    
+  }else
+    if (col_pal_type == "Numeric") {
+      pal <- colorNumeric(palette = "inferno", dplyr::pull(plot_df, !!v))
+      
+    }else
+      if (col_pal_type == "Bin") {
+        pal <- colorBin(palette = "inferno", dplyr::pull(plot_df, !!v))
+        
+      }else
+        if (col_pal_type == "Quantile") {
+          pal <- colorQuantile(palette = "inferno", dplyr::pull(plot_df, !!v))
+          
+        }
+  
+  rlang::eval_tidy(rlang::quo_squash(quo({
+    leaflet::leaflet(plot_df) %>% 
+      addPolygons(color = ~pal(dplyr::pull(plot_df, !!v)))%>%
+      leaflet::addProviderTiles(leaflet::providers$Esri.WorldTopoMap)%>%
+      leaflet::addPolygons(fillColor = ~pal(!!v),
+                           weight = 2,
+                           opacity = 1,
+                           color = "white",
+                           dashArray = "3",
+                           fillOpacity = 0.7,
+                           popup = ~paste("WeppID:", plot_df$wepp_id,
+                                          "<br>",if(!is.null(unit)) {
+                                            paste0(as_label(v)," (",unit,") ",":")
+                                          }else{paste0(as_label(v),":")}, dplyr::pull(plot_df, !!v)),
+                           label = ~paste("WeppID:", plot_df$wepp_id,
+                                          "\n",
+                                          if(!is.null(unit)) {
+                                            paste0(as_label(v)," (",unit,") ",":")
+                                          }else{paste0(as_label(v),":")}, dplyr::pull(plot_df, !!v)),
+                           highlightOptions = leaflet::highlightOptions(weight = 3,
+                                                                        color = "#000",
+                                                                        dashArray = "",
+                                                                        fillOpacity = 0.7,
+                                                                        bringToFront = TRUE))%>%
+      leaflet::addLegend(pal = pal,
+                         values = ~dplyr::pull(plot_df, !!v),
+                         title = ~as_label(v))
+  })))
+}
