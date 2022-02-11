@@ -42,4 +42,38 @@
 
 .big_txt { font-size:120%;}
 
+.column-right-plt-and-tab{
+  float: right;
+  width: 49%;
+  text-align: right;
+}
+
+.column-cntr-plt-and-tab{
+  float: right;
+  width: 2%;
+  text-align: right;
+}
+
+.column-left-plt-and-tab{
+  float: left;
+  width: 49%;
+  text-align: left;
+}
+
+
+.wrapper-two{
+        margin-left:auto;
+        margin-right:auto;
+        height:auto; 
+        width:auto;
+    }
+.map-canvas {
+   float:left; 
+}
+
+.tab-canvas{
+   float:left; 
+   clear: left;
+}
+
 </style>
