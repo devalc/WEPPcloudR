@@ -217,16 +217,25 @@ read_subcatchments = function(runid){
     
     geom_sum = dplyr::left_join(geom_sum, subcatchments, by =c("WeppID"))
     
-    geom_sum[c('Soil', 'Gradient', 'Texture')] <- str_split_fixed(geom_sum$soil, ',', 3)
+    geom_sum = geom_sum %>% tidyr::separate(soil,
+                                            c("x1", "x2", "x3", "x4"),
+                                            sep = ",",
+                                            fill="right" )%>% 
+      dplyr::mutate(Soil= case_when(grepl("slopes", x2)==TRUE~x1,
+                                    grepl("slopes", x2)==FALSE~paste(x1,x2,sep=",")),
+                    Gradient = case_when((grepl("slopes", x2)==TRUE)~x2,
+                                         (grepl("slopes", x2)==FALSE & grepl("slopes", x3)==TRUE)~x3),
+                    Texture = case_when((grepl("slopes", x2)==TRUE)~x3,
+                                        (grepl("slopes", x2)==FALSE)~x4))
     
-    geom_sum = geom_sum %>% 
-      dplyr::select(-c(wepp_id,soil))%>% 
-      janitor::clean_names()%>% 
+    geom_sum = geom_sum %>%
+      dplyr::select(-c(wepp_id,x1,x2,x3,x4))%>%
+      janitor::clean_names()%>%
       dplyr::mutate(soil = stringr::str_replace(soil,pattern = "-"," "))
-    
-    geom_sum = geom_sum %>% dplyr::mutate(dplyr::across(dplyr::contains('_kg_ha'), 
+
+    geom_sum = geom_sum %>% dplyr::mutate(dplyr::across(dplyr::contains('_kg_ha'),
                      .fns = list(kg = ~.*area_ha)))
-    
+
     colnames(geom_sum)[25:30] <- c("Particulate_Phosphorus_kg",
                                    "Soluble_Reactive_Phosohorus_kg",
                                    "Sediment_Deposition_kg",
@@ -248,23 +257,34 @@ read_subcatchments = function(runid){
     
       geom_sum = dplyr::left_join(geom_sum, subcatchments, by =c("WeppID"))
     
-      geom_sum[c('Soil', 'Gradient', 'Texture')] <- str_split_fixed(geom_sum$soil, ',', 3)
-    
-      geom_sum = geom_sum %>% 
-        dplyr::select(-c(wepp_id,soil))%>% 
-        janitor::clean_names()%>% 
+      geom_sum = geom_sum %>% tidyr::separate(soil,
+                                              c("x1", "x2", "x3", "x4"),
+                                              sep = ",",
+                                              fill="right" )%>% 
+        dplyr::mutate(Soil= case_when(grepl("slopes", x2)==TRUE~x1,
+                                      grepl("slopes", x2)==FALSE~paste(x1,x2,sep=",")),
+                                      Gradient = case_when((grepl("slopes", x2)==TRUE)~x2,
+                                      (grepl("slopes", x2)==FALSE & grepl("slopes", x3)==TRUE)~x3),
+                                      Texture = case_when((grepl("slopes", x2)==TRUE)~x3,
+                                      (grepl("slopes", x2)==FALSE)~x4))
+      
+
+      geom_sum = geom_sum %>%
+        dplyr::select(-c(wepp_id, x1,x2,x3,x4))%>%
+        janitor::clean_names()%>%
         dplyr::mutate(soil = stringr::str_replace(soil,pattern = "-"," "))
-  }
-  
-  geom_sum = geom_sum %>% dplyr::mutate(dplyr::across(dplyr::contains('_kg_ha'), 
+
+
+  geom_sum = geom_sum %>% dplyr::mutate(dplyr::across(dplyr::contains('_kg_ha'),
                                                       .fns = list(kg = ~.*area_ha)))
-  
+  # 
   colnames(geom_sum)[25:30] <- c("Particulate_Phosphorus_kg",
                                  "Soluble_Reactive_Phosohorus_kg",
                                  "Sediment_Deposition_kg",
                                  "Sediment_Yield_kg",
                                  "Soil_Loss_kg",
                                  "Total_Phosphorus_kg")
+    }
   return(geom_sum)
 }
 
@@ -307,14 +327,17 @@ gen_cumulative_plt_df <- function(subcatch, var_to_use){
   var_to_use = dplyr::enquo(var_to_use)
 
   c_plt_df = subcatch %>%
-      as.data.frame()%>%
-      dplyr::select(!!var_to_use,area_ha)%>%
+      # as.data.frame()%>%
+      dplyr::select(wepp_id,!!var_to_use,area_ha,geometry,soil,Texture,slope)%>%
       dplyr::arrange(desc(!!var_to_use)) %>%
       dplyr::mutate(cumPercArea = cumsum(area_ha) / sum(area_ha) *100,
                     new_col = cumsum(!!var_to_use) / sum(!!var_to_use) *100)%>%
-    dplyr::mutate_at(vars(new_col), ~replace(., is.nan(.), 0))
+    dplyr::mutate_at(vars(new_col), ~replace(., is.nan(.), 0))%>%
+    dplyr::mutate(dplyr::across(where(is.numeric), round, 0))%>%
+    dplyr::select(wepp_id,!!var_to_use,area_ha,geometry,cumPercArea,new_col,
+                  soil,Texture,slope)
   
-  colnames(c_plt_df)[4] = paste0("cum_",colnames(c_plt_df)[1])
+  colnames(c_plt_df)[6] = paste0("cum_",colnames(c_plt_df)[2])
   
   
   
