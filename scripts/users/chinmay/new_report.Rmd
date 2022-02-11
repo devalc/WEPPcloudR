@@ -35,6 +35,7 @@ library(leaflet, quietly = TRUE)
 library(data.table, quietly = TRUE)
 library(leafsync, quietly = TRUE)
 library(crosstalk, quietly = TRUE)
+library(reshape2, quietly = TRUE)
 
 
 ```
