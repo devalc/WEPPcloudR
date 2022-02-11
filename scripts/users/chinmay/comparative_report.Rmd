@@ -1,0 +1,111 @@
+---
+title: "`r paste0('A report generated for', ' PLACEHOLDER', ' WEPPcloud run')`"
+date: "`r Sys.Date()`"
+output: 
+  cleanrmd::html_document_clean:
+    css: "styles.css"
+    fig_caption: true
+    theme: axist
+    mathjax: default
+    use_fontawesome: true
+    toc: true
+    toc_float: true
+params:
+  proj_runid: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, include=FALSE}
+sys.source("weppcloudr_report_functions.R",envir = knitr::knit_global())
+```
+
+```{r include=FALSE}
+library(tidyverse, quietly = TRUE)
+library(cleanrmd, quietly = TRUE)
+library(plotly, quietly = TRUE)
+library(furrr, quietly = TRUE)
+library(janitor, quietly = TRUE)
+library(cleanrmd, quietly = TRUE)
+library(echarts4r, quietly = TRUE)
+library(DT, quietly = TRUE)
+library(leaflet, quietly = TRUE)
+library(data.table, quietly = TRUE)
+library(leafsync, quietly = TRUE)
+library(crosstalk, quietly = TRUE)
+library(reshape2, quietly = TRUE)
+
+```
+
+<!-- ######################### GENERATE REPORT ##################################-->
+
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+list_runs = stringr::str_split(params$proj_runid, "%")
+subcatchments1 = read_subcatchments(unlist(list_runs)[1])
+subcatchments2 = read_subcatchments(unlist(list_runs)[2])
+```
+
+
+
+```{r, echo=FALSE,message=FALSE,warning=FALSE}
+### totalwatsed
+
+totalwatseddf1 <- process_totalwatsed(unlist(list_runs)[1])
+totalwatseddf2 <- process_totalwatsed(unlist(list_runs)[2])
+
+totalwatsed_wy_mean_df1 = totalwatseddf1 %>%
+          dplyr::select(-julian,-year,-Date,-mo,-da) %>%
+          dplyr::group_by(WY) %>%
+          dplyr::summarise_all(mean)
+
+totalwatsed_wbal1 = totwatsed_to_wbal(totalwatseddf1)
+
+
+totalwatsed_wy_mean_df2 = totalwatseddf2 %>%
+          dplyr::select(-julian,-year,-Date,-mo,-da) %>%
+          dplyr::group_by(WY) %>%
+          dplyr::summarise_all(mean)
+
+totalwatsed_wbal2 = totwatsed_to_wbal(totalwatseddf2)
+
+```
+
+<div style="clear: both;"></div>
+
+### Hydrology
+
+
+
+```{r, echo=FALSE,message=FALSE,warning=FALSE}
+totalwatsed_wbal1 =totalwatsed_wbal1 %>% dplyr::filter(variable != "Precipitation (mm)") %>% dplyr::arrange(-value)
+
+totalwatsed_wbal2 =totalwatsed_wbal2 %>% dplyr::filter(variable != "Precipitation (mm)") %>% dplyr::arrange(-value)
+```
+
+
+#### Watershed water balance 
+
+ 
+
+```{r, echo=FALSE,message=FALSE,warning=FALSE, fig.cap=""}
+totalwatsed_wbal1%>%
+            echarts4r::e_charts(variable)  %>%
+            echarts4r::e_pie(
+                value,
+                radius = c("55%", "70%")
+            )%>%
+          echarts4r::e_tooltip()%>% e_theme("auritus")
+```
+
+```{r, echo=FALSE,message=FALSE,warning=FALSE, fig.cap=""}
+totalwatsed_wbal2%>%
+            echarts4r::e_charts(variable)  %>%
+            echarts4r::e_pie(
+                value,
+                radius = c("55%", "70%")
+            )%>%
+          echarts4r::e_tooltip()%>% e_theme("auritus")
+```
