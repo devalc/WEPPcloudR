@@ -11,7 +11,7 @@ output:
     toc: true
     toc_float: true
 params:
-  proj_runid: default
+  ws: default
 ---
 
 ```{r setup, include=FALSE}
@@ -41,6 +41,10 @@ library(reshape2, quietly = TRUE)
 
 <!-- ######################### GENERATE REPORT ##################################-->
 
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+print(params$ws)
+q("yes")
+```
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
 list_runs = stringr::str_split(params$proj_runid, "%")

@@ -245,7 +245,7 @@ read_subcatchments = function(runid){
     
     }else{
       
-      link <- paste0("https://wepp.cloud/weppcloud/runs/",runid, "/cfg/browse/export/arcmap/subcatchments.json")
+      link <- paste0("https://wepp.cloud/weppcloud/runs/",runid, "/cfg/meta/subcatchments.WGS.json")
       
       subcatchments <- sf::st_read(link,quiet = TRUE) %>%
       sf::st_transform(4326) 
