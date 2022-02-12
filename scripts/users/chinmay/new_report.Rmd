@@ -36,7 +36,7 @@ library(data.table, quietly = TRUE)
 library(leafsync, quietly = TRUE)
 library(crosstalk, quietly = TRUE)
 library(reshape2, quietly = TRUE)
-
+library(sf, quietly = TRUE)
 
 ```
 
@@ -206,7 +206,7 @@ perc_flow %>%
 ```{r, echo=FALSE, message=FALSE,warning=FALSE}
 runoff_cp_df= gen_cumulative_plt_df(subcatchments, runoff_mm)
 sd_yd_cp_df= gen_cumulative_plt_df(subcatchments, Sediment_Yield_kg)
-tp_cp_df = gen_cumulative_plt_df(subcatchments, Total_Phosphorus_kg)
+
 ```
 
 ### Runoff 
@@ -405,6 +405,14 @@ DT::datatable(sd,
 </div>
 </div>
 
+
+`r if(!file.exists(paste0("/geodata/weppcloud_runs/",params$proj_runid,"/wepp/runs/phosphorus.txt"))){"<!--"}`
+
+
+```{r, echo=FALSE, message=FALSE,warning=FALSE}
+tp_cp_df = gen_cumulative_plt_df(subcatchments, Total_Phosphorus_kg)
+```
+
 ### Total Phosphorus
 
 <div style="clear: both;"></div>
@@ -504,6 +512,7 @@ DT::datatable(sd_tp,
 </div>
 </div>
 
+`r if(!file.exists(paste0("/geodata/weppcloud_runs/",params$proj_runid,"/wepp/runs/phosphorus.txt"))){"-->"}`
 
 ### Timeseries plots
             
@@ -513,10 +522,10 @@ DT::datatable(sd_tp,
 </div>
             
 ```{r, echo=FALSE, message=FALSE,warning=FALSE}
-merged_WY_plt = merged_WY %>% dplyr::select(WY, Q_outlet_mm,
-                                                      Sediment_tonnes_ebe,
-                                                      SRP_tonnes_ebe,PP_tonnes_ebe,
-                                                      TP_tonnes_ebe)%>% reshape2::melt(id.vars = "WY")
+merged_WY_plt = merged_WY %>% dplyr::select(dplyr::any_of(c("WY", "Q_outlet_mm",
+                                          "Sediment_tonnes_ebe",
+                                          "SRP_tonnes_ebe","PP_tonnes_ebe",
+                                          "TP_tonnes_ebe")))%>% reshape2::melt(id.vars = "WY")
 ```
           
 ```{r, echo=FALSE, message=FALSE,warning=FALSE}
@@ -528,10 +537,10 @@ merged_WY_plt %>% plotly::plot_ly(x = ~WY, y = ~value, color = ~variable,
 #### Daily
           
 ```{r, echo=FALSE, message=FALSE,warning=FALSE}
-merged_daily_df_plt = merged_daily_df %>% dplyr::select(Date, Q_outlet_mm,
-                                                                  Sediment_tonnes_ebe,
-                                                                  SRP_tonnes_ebe,PP_tonnes_ebe,
-                                                                  TP_tonnes_ebe)%>% reshape2::melt(id.vars = "Date")
+merged_daily_df_plt =merged_daily_df %>% dplyr::select(dplyr::any_of(c("Date", "Q_outlet_mm",
+                                          "Sediment_tonnes_ebe",
+                                          "SRP_tonnes_ebe","PP_tonnes_ebe",
+                                          "TP_tonnes_ebe"))) %>% reshape2::melt(id.vars = "Date")
 ```
 
           
