@@ -242,17 +242,14 @@ read_subcatchments = function(runid){
                                   .fns = list(kg = ~.*area_ha)))
     
     if (file.exists(phosporus_flag)) {
-      
-<<<<<<< HEAD
-      link <- paste0("https://wepp.cloud/weppcloud/runs/",runid, "/cfg/meta/subcatchments.WGS.json")
-=======
+
+
       geom_sum = geom_sum %>% dplyr::rename("Particulate_Phosphorus_kg" ="pp_kg_ha_kg",
                                             "Soluble_Reactive_Phosohorus_kg"= "srp_kg_ha_kg",
                                             "Sediment_Deposition_kg" = "sd_dp_kg_ha_kg",
                                             "Sediment_Yield_kg"= "sd_yd_kg_ha_kg",
                                             "Soil_Loss_kg" = "so_ls_kg_ha_kg",
                                             "Total_Phosphorus_kg" = "tp_kg_ha_kg")
->>>>>>> 35255aec0b5e4bc07c7aa593c548e8fab66611f7
       
     }else{
       geom_sum = geom_sum %>% dplyr::rename("Sediment_Deposition_kg" = "sd_dp_kg_ha_kg",
@@ -261,8 +258,7 @@ read_subcatchments = function(runid){
     }
     
   }else{
-    
-    link <- paste0("https://wepp.cloud/weppcloud/runs/",runid, "/cfg/browse/export/arcmap/subcatchments.json")
+    link <- paste0("https://wepp.cloud/weppcloud/runs/",runid, "/cfg/meta/subcatchments.WGS.json")
     
     phosporus_flag = paste0("https://wepp.cloud/weppcloud/runs/",runid, "/cfg/browse/wepp/runs/phosphorus.txt")
     
