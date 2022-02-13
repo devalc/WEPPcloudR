@@ -347,7 +347,7 @@ gp_sed = sd_yd_cp_df %>%
   echarts4r::e_charts(x = cumPercArea) %>%
   echarts4r::e_area(cum_Sediment_Yield_kg,
   name=paste(stringr::str_split(colnames(sd_yd_cp_df)[6],"_")[[1]][2], stringr::str_split(colnames(sd_yd_cp_df)[6],"_")[[1]][3], sep = " "))%>%
-                echarts4r::e_tooltip(trigger = "axis")%>%e_theme("dark")%>%
+                echarts4r::e_tooltip(trigger = "axis")%>%e_theme("sakura")%>%
             e_axis_labels(x="Area (%)",
                           y= paste(stringr::str_split(colnames(sd_yd_cp_df)[6],"_")[[1]][2], stringr::str_split(colnames(sd_yd_cp_df)[6],"_")[[1]][3], "(%)", sep = " "))
 
@@ -455,7 +455,7 @@ gp_tp = tp_cp_df %>%
   echarts4r::e_charts(x = cumPercArea) %>%
   echarts4r::e_area(cum_Total_Phosphorus_kg,
   name =paste(stringr::str_split(colnames(tp_cp_df)[6],"_")[[1]][2], stringr::str_split(colnames(tp_cp_df)[6],"_")[[1]][3], sep = " "))%>%
-  echarts4r::e_tooltip(trigger = "axis")%>%e_theme("dark")%>%
+  echarts4r::e_tooltip(trigger = "axis")%>%e_theme("sakura")%>%
   e_axis_labels(
               x = "Area (%)",
               y = paste(stringr::str_split(colnames(tp_cp_df)[6],"_")[[1]][2], stringr::str_split(colnames(tp_cp_df)[6],"_")[[1]][3], "(%)", sep = " ")
