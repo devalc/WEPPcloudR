@@ -306,7 +306,7 @@ DT::datatable(sd_r,
                                                   targets=c(3:4,8))),
             initComplete = JS(
     "function(settings, json) {",
-    "$(this.api().table().header()).css({'background-color': '#000', 'color': '#fff'});",
+    "$(this.api().table().header()).css({'background-color': '#2a9d8f', 'color': '#fff'});",
     "}")),
                rownames= FALSE)%>%
   formatStyle(
