@@ -288,7 +288,7 @@ ggplotly(ggplot() +
 
 DT::datatable(sd_r,
               class = "display",
-              extensions=c("Scroller","Buttons","FixedColumns","Responsive"),
+              extensions=c("Scroller","Buttons","Responsive"),
               options=list(dom = 'BRSfrti',
                            buttons = c('copy', 'csv', 'excel', 'pdf', 'print'),
                            deferRender=TRUE,
@@ -298,7 +298,6 @@ DT::datatable(sd_r,
                            scroller=TRUE,
                            autoWidth = TRUE,
                            fixedHeader = FALSE,
-                          # fixedColumns = list(leftColumns = 2),
             fillContainer = FALSE,
                            # pageLength = 10,
                            columnDefs = list(list(className = 'dt-left',
@@ -307,7 +306,7 @@ DT::datatable(sd_r,
                rownames= FALSE)%>%
   formatStyle(
     'runoff_mm',
-    background = styleColorBar(sd_r$data()$runoff_mm, '#ef755e'),
+    background = styleColorBar(sd_r$data()$runoff_mm, '#ED6A76'),
     backgroundSize = '90% 100%',
     backgroundRepeat = 'no-repeat',
     backgroundPosition = 'center'
@@ -393,7 +392,7 @@ ggplotly(ggplot() +
 
 DT::datatable(sd,
               class = "display",
-              extensions=c("Scroller","Buttons","FixedColumns","Responsive"),
+              extensions=c("Scroller","Buttons","Responsive"),
               options=list(dom = 'BRSfrti',
                            buttons = c('copy', 'csv', 'excel', 'pdf', 'print'),
                            deferRender=TRUE,
@@ -403,7 +402,6 @@ DT::datatable(sd,
                            scroller=TRUE,
                            autoWidth = TRUE,
                            fixedHeader = FALSE,
-                          # fixedColumns = list(leftColumns = 2),
             fillContainer = FALSE,
                            # pageLength = 10,
                            columnDefs = list(list(className = 'dt-left',
@@ -412,7 +410,7 @@ DT::datatable(sd,
                rownames= FALSE)%>%
   formatStyle(
     'Sediment_Yield_kg',
-    background = styleColorBar(sd$data()$Sediment_Yield_kg, '#ef755e'),
+    background = styleColorBar(sd$data()$Sediment_Yield_kg, '#ED6A76'),
     backgroundSize = '90% 100%',
     backgroundRepeat = 'no-repeat',
     backgroundPosition = 'center'
@@ -509,7 +507,7 @@ ggplotly(ggplot() +
 
 DT::datatable(sd_tp,
               class = "display",
-              extensions=c("Scroller","Buttons","FixedColumns","Responsive"),
+              extensions=c("Scroller","Buttons","Responsive"),
               options=list(dom = 'BRSfrti',
                            buttons = c('copy', 'csv', 'excel', 'pdf', 'print'),
                            deferRender=TRUE,
@@ -519,7 +517,6 @@ DT::datatable(sd_tp,
                            scroller=TRUE,
                            autoWidth = TRUE,
                            fixedHeader = FALSE,
-                          # fixedColumns = list(leftColumns = 2),
             fillContainer = FALSE,
                            # pageLength = 10,
                            columnDefs = list(list(className = 'dt-left',
@@ -528,7 +525,7 @@ DT::datatable(sd_tp,
                rownames= FALSE)%>%
   formatStyle(
     'Total_Phosphorus_kg',
-    background = styleColorBar(sd_tp$data()$Total_Phosphorus_kg, '#ef755e'),
+    background = styleColorBar(sd_tp$data()$Total_Phosphorus_kg, '#ED6A76'),
     backgroundSize = '90% 100%',
     backgroundRepeat = 'no-repeat',
     backgroundPosition = 'center'
