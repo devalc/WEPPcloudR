@@ -1,5 +1,5 @@
 ---
-title: "`r paste0('A report generated for', params$proj_runid)`"
+title: "`r paste0('A report generated for ', params$proj_runid, ' run')`"
 date: "`r Sys.Date()`"
 output: 
   cleanrmd::html_document_clean:
