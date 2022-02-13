@@ -239,7 +239,7 @@ gp_runoff = runoff_cp_df %>%
   echarts4r::e_charts(x = cumPercArea) %>%
   echarts4r::e_area(cum_runoff_mm, name = stringr::str_to_title(stringr::str_split(colnames(runoff_cp_df)[6],"_")[[1]][2]))%>%
   echarts4r::e_tooltip(trigger = "axis")%>%
-  e_theme("macarons")%>%
+  e_theme("roma")%>%
   e_axis_labels(x="Area (%)",
                 y = paste(stringr::str_to_title(stringr::str_split(colnames(runoff_cp_df)[6],"_")[[1]][2]), "(%)", sep = " "))
 
