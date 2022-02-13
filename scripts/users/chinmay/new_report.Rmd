@@ -224,6 +224,8 @@ sd_yd_cp_df= gen_cumulative_plt_df(subcatchments, Sediment_Yield_kg)
 
 `r if(sum(runoff_cp_df$cum_runoff_mm)==0) {"-->"}`
 
+`r if(sum(runoff_cp_df$cum_runoff_mm)==0) {"<span class='big_txt'>No runoff was generated during the entire simulation.</span>"}`
+
 <div class="column-center"> </div>
 
 <div class="column-right">
@@ -321,8 +323,15 @@ DT::datatable(sd_r,
 
 <div class="column-right-alt">
 
+`r if(sum(sd_yd_cp_df$Sediment_Yield_kg)==0) {"<!--"}`
+
 <span class='bigger'>`r round(tail(df_head_percent(as.data.frame(sd_yd_cp_df), 30),1)[,6])`% </span> <span class='big_txt'> `r stringr::str_split(colnames(sd_yd_cp_df)[6],"_")[[1]][2]` `r stringr::str_split(colnames(sd_yd_cp_df)[6],"_")[[1]][3]` is contributed by
 `r round(tail(df_head_percent(as.data.frame(sd_yd_cp_df), 30),1)[,5])`% watershed area.</span>
+
+`r if(sum(sd_yd_cp_df$Sediment_Yield_kg)==0) {"-->"}`
+
+`r if(sum(sd_yd_cp_df$Sediment_Yield_kg)==0) {"<span class='big_txt'>No sediment was generated during the entire simulation.</span>"}`
+
 </div>
 
 <div class="column-center"> </div>
@@ -419,9 +428,17 @@ tp_cp_df = gen_cumulative_plt_df(subcatchments, Total_Phosphorus_kg)
 <div id="wrapper">
             
 <div class="column-left">
+
+`r if(sum(tp_cp_df$Total_Phosphorus_kg)==0) {"<!--"}`
+            
             
 <span class='bigger'>`r round(tail(df_head_percent(as.data.frame(tp_cp_df), 30),1)[,6])`% </span> <span class='big_txt'> `r stringr::str_split(colnames(tp_cp_df)[6],"_")[[1]][2]` `r stringr::str_split(colnames(tp_cp_df)[6],"_")[[1]][3]` is contributed by
             `r round(tail(df_head_percent(as.data.frame(tp_cp_df), 30),1)[,5])`% watershed area. </span>
+
+`r if(sum(tp_cp_df$Total_Phosphorus_kg)==0) {"-->"}`
+
+`r if(sum(tp_cp_df$Total_Phosphorus_kg)==0) {"<span class='big_txt'>No phosphorus was generated during the entire simulation.</span>"}`
+            
 </div>
 
 <div class="column-center"> </div>
