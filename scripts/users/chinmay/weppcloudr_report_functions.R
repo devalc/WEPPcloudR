@@ -356,7 +356,7 @@ gen_cumulative_plt_df <- function(subcatch, var_to_use){
       dplyr::mutate(cumPercArea = cumsum(area_ha) / sum(area_ha) *100,
                     new_col = cumsum(!!var_to_use) / sum(!!var_to_use) *100)%>%
     dplyr::mutate_at(vars(new_col), ~replace(., is.nan(.), 0))%>%
-    dplyr::mutate(dplyr::across(where(is.numeric), round, 0))%>%
+    dplyr::mutate(dplyr::across(where(is.numeric), round, 1))%>%
     dplyr::select(wepp_id,!!var_to_use,area_ha,geometry,cumPercArea,new_col,
                   soil,Texture,slope)
   
