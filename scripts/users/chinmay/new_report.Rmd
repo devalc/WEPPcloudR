@@ -95,7 +95,8 @@ totalwatsed_wbal = totwatsed_to_wbal(totalwatseddf)
 This watershed received an average annual precipitation of `r round(totalwatsed_wbal$value[1])` mm over the simulation period. 
 
 ```{r, echo=FALSE,message=FALSE,warning=FALSE}
-totalwatsed_wbal =totalwatsed_wbal %>% dplyr::filter(variable != "Precipitation (mm)") %>% dplyr::arrange(-value)
+totalwatsed_wbal =totalwatsed_wbal %>% dplyr::filter(variable != "Precipitation (mm)")%>% dplyr::mutate(variable=recode(variable, 'Rain+Melt (%)'='Precipitation (%)')) %>% 
+  dplyr::arrange(-value)
 ```
 
 
