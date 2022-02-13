@@ -192,7 +192,7 @@ perc_flow = merged_WY %>%
 
 
 
-Figure below shows total simulated streamflow for each water year divided into baseflow, lateral flow, and runoff, and percentage of each relative to the streamflow. For the entire simulation period the average baseflow was `r round(mean(perc_flow$PercentBaseflow))`%, lateral flow was `r round(mean(perc_flow$PercentLateral))`%, and runoff was `r round(mean(perc_flow$PercentRunoff))`%. 
+Figure below shows total simulated streamflow for each water year divided into baseflow, lateral flow, and runoff, and percentage of each relative to the streamflow. For the entire simulation period the average <span class="baseflow">baseflow was `r round(mean(perc_flow$PercentBaseflow))`%</span>, lateral flow was `r round(mean(perc_flow$PercentLateral))`%, and runoff was `r round(mean(perc_flow$PercentRunoff))`%. 
 
 ```{r, echo=FALSE, message=FALSE,warning=FALSE}
 
