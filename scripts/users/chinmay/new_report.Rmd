@@ -578,7 +578,7 @@ merged_daily_df_plt %>% plotly::plot_ly(x = ~Date, y = ~value, color = ~variable
 
 #### Landuse
 
-<div id="tab-canvas">
+
 ```{r, echo=FALSE, message=FALSE,warning=FALSE}
 landuse_summary_tab = subcatchments   %>% as.data.frame() %>%
     dplyr::select(landuse,slope,runoff_mm, so_ls_kg_ha, sd_yd_kg_ha, tp_kg_ha)%>%
@@ -612,7 +612,7 @@ DT::datatable(landuse_summary_tab,
 )
   
 ```
-</div>
+
 
 #### Soils
 
@@ -630,7 +630,7 @@ soils_summary_tab = subcatchments   %>% as.data.frame() %>%
                         dplyr::mutate_if(is.numeric, round, 2)
 ```
 
-### Landuse and soils
+#### Landuse and soils
 
 ```{r, echo=FALSE, message=FALSE,warning=FALSE}
 both_summary_tab = subcatchments   %>% as.data.frame() %>%
