@@ -576,8 +576,9 @@ merged_daily_df_plt %>% plotly::plot_ly(x = ~Date, y = ~value, color = ~variable
 
 ### Grouped summary tables
 
-#### Landuse
+#### Land use
 
+The table below shows runoff, sediment and phosphorus means for different land use categories.
 
 ```{r, echo=FALSE, message=FALSE,warning=FALSE}
 landuse_summary_tab = subcatchments   %>% as.data.frame() %>%
@@ -617,6 +618,8 @@ DT::datatable(landuse_summary_tab,
 
 #### Soils
 
+The table below shows runoff, sediment and phosphorus means for different soil types.
+
 ```{r, echo=FALSE, message=FALSE,warning=FALSE}
 soils_summary_tab = subcatchments   %>% as.data.frame() %>%
     dplyr::select(soil,slope,runoff_mm, so_ls_kg_ha, sd_yd_kg_ha, tp_kg_ha)%>%
@@ -629,9 +632,33 @@ soils_summary_tab = subcatchments   %>% as.data.frame() %>%
     group_by(Soil) %>% dplyr::summarise_if(is.numeric, list(mean =
                                                                        mean)) %>%
                         dplyr::mutate_if(is.numeric, round, 2)
+
+colnames(soils_summary_tab) = sapply(strsplit(colnames(soils_summary_tab), "_mean"), `[[`, 1)
+
+```
+
+```{r, echo=FALSE}
+DT::datatable(soils_summary_tab,
+              class = "display",
+              extensions=c("Scroller","Buttons","Responsive"),
+              options=list(dom = 'BRSfrti',
+                           buttons = c('copy', 'csv', 'excel', 'pdf', 'print'),
+                           deferRender=TRUE,
+                           searching = FALSE,
+                           scrollX=250,
+                          scrollY=250,
+                           scroller=TRUE,
+                           autoWidth = TRUE,
+                           fixedHeader = FALSE,
+            fillContainer = FALSE),
+               rownames= FALSE)  
+
+  
 ```
 
 #### Landuse and soils
+
+The table below shows runoff, sediment and phosphorus means for different combinations of land use categories and soil types.
 
 ```{r, echo=FALSE, message=FALSE,warning=FALSE}
 both_summary_tab = subcatchments   %>% as.data.frame() %>%
@@ -646,4 +673,26 @@ both_summary_tab = subcatchments   %>% as.data.frame() %>%
     group_by(Landuse, Soil) %>% dplyr::summarise_if(is.numeric, list(mean =
                                                                        mean)) %>%
                         dplyr::mutate_if(is.numeric, round, 2)
+
+colnames(both_summary_tab) = sapply(strsplit(colnames(both_summary_tab), "_mean"), `[[`, 1)
+
+```
+
+```{r, echo=FALSE}
+DT::datatable(both_summary_tab,
+              class = "display",
+              extensions=c("Scroller","Buttons","Responsive"),
+              options=list(dom = 'BRSfrti',
+                           buttons = c('copy', 'csv', 'excel', 'pdf', 'print'),
+                           deferRender=TRUE,
+                           searching = FALSE,
+                           scrollX=400,
+                          scrollY=250,
+                           scroller=TRUE,
+                           autoWidth = TRUE,
+                           fixedHeader = FALSE,
+            fillContainer = FALSE),
+               rownames= FALSE)  
+
+  
 ```
