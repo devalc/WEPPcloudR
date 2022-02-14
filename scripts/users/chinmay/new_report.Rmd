@@ -583,7 +583,6 @@ merged_daily_df_plt %>% plotly::plot_ly(x = ~Date, y = ~value, color = ~variable
 landuse_summary_tab = subcatchments   %>% as.data.frame() %>%
     dplyr::select(landuse,slope,runoff_mm, so_ls_kg_ha, sd_yd_kg_ha, tp_kg_ha)%>%
   dplyr::rename("Landuse" = "landuse",
-                # "Soil"="soil",
                 "Slope" = "slope",
                 "Soil Loss (kg/ha)"=  "so_ls_kg_ha",
                 "Sediment Yield (kg/ha)" = "sd_yd_kg_ha",
@@ -592,7 +591,11 @@ landuse_summary_tab = subcatchments   %>% as.data.frame() %>%
     group_by(Landuse) %>% dplyr::summarise_if(is.numeric, list(mean =
                                                                        mean)) %>%
                         dplyr::mutate_if(is.numeric, round, 2)
+colnames(landuse_summary_tab) = sapply(strsplit(colnames(landuse_summary_tab), "_mean"), `[[`, 1)
 
+```
+
+```{r, echo=FALSE}
 DT::datatable(landuse_summary_tab,
               class = "display",
               extensions=c("Scroller","Buttons","Responsive"),
@@ -606,10 +609,8 @@ DT::datatable(landuse_summary_tab,
                            autoWidth = TRUE,
                            fixedHeader = FALSE,
             fillContainer = FALSE),
-               rownames= FALSE)  %>% formatStyle(
-  'Slope',
-  backgroundColor = styleEqual(c(0, 1), c('gray', 'yellow'))
-)
+               rownames= FALSE)  
+
   
 ```
 
