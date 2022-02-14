@@ -681,7 +681,7 @@ colnames(both_summary_tab) = sapply(strsplit(colnames(both_summary_tab), "_mean"
 ```{r, echo=FALSE}
 DT::datatable(both_summary_tab,
               class = "display",
-              extensions=c("Scroller","Buttons","Responsive"),
+              extensions=c("Scroller","Buttons"),
               options=list(dom = 'BRSfrti',
                            buttons = c('copy', 'csv', 'excel', 'pdf', 'print'),
                            deferRender=TRUE,
