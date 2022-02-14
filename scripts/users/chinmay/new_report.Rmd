@@ -289,7 +289,7 @@ ggplotly(ggplot() +
 
 DT::datatable(sd_r,
               class = "display",
-              extensions=c("Scroller","Buttons","Responsive"),
+              extensions=c("Scroller","Buttons"),
               options=list(dom = 'BRSfrti',
                            buttons = c('copy', 'csv', 'excel', 'pdf', 'print'),
                            deferRender=TRUE,
@@ -393,7 +393,7 @@ ggplotly(ggplot() +
 
 DT::datatable(sd,
               class = "display",
-              extensions=c("Scroller","Buttons","Responsive"),
+              extensions=c("Scroller","Buttons"),
               options=list(dom = 'BRSfrti',
                            buttons = c('copy', 'csv', 'excel', 'pdf', 'print'),
                            deferRender=TRUE,
@@ -508,7 +508,7 @@ ggplotly(ggplot() +
 
 DT::datatable(sd_tp,
               class = "display",
-              extensions=c("Scroller","Buttons","Responsive"),
+              extensions=c("Scroller","Buttons"),
               options=list(dom = 'BRSfrti',
                            buttons = c('copy', 'csv', 'excel', 'pdf', 'print'),
                            deferRender=TRUE,
@@ -599,7 +599,7 @@ colnames(landuse_summary_tab) = sapply(strsplit(colnames(landuse_summary_tab), "
 ```{r, echo=FALSE}
 DT::datatable(landuse_summary_tab,
               class = "display",
-              extensions=c("Scroller","Buttons","Responsive"),
+              extensions=c("Scroller","Buttons"),
               options=list(dom = 'BRSfrti',
                            buttons = c('copy', 'csv', 'excel', 'pdf', 'print'),
                            deferRender=TRUE,
@@ -640,7 +640,7 @@ colnames(soils_summary_tab) = sapply(strsplit(colnames(soils_summary_tab), "_mea
 ```{r, echo=FALSE}
 DT::datatable(soils_summary_tab,
               class = "display",
-              extensions=c("Scroller","Buttons","Responsive"),
+              extensions=c("Scroller","Buttons"),
               options=list(dom = 'BRSfrti',
                            buttons = c('copy', 'csv', 'excel', 'pdf', 'print'),
                            deferRender=TRUE,
