@@ -236,7 +236,8 @@ read_subcatchments = function(runid){
                     Texture = case_when((grepl("slopes", x2)==TRUE)~x3,
                                         (grepl("slopes", x2)==FALSE)~x4),
                     Texture = replace_na(Texture, "Refer to the soil file for details"),
-                    Gradient = replace_na(Gradient, "Refer to the soil file for details"))%>%
+                    Gradient = replace_na(Gradient, "Refer to the soil file for details"),
+                    Soil = str_remove(Soil, ",NA"))%>%
       dplyr::select(-c(wepp_id,x1,x2,x3,x4))%>%
       janitor::clean_names()%>%
       dplyr::mutate(soil = stringr::str_replace(soil,pattern = "-"," "))%>% 
@@ -288,7 +289,8 @@ read_subcatchments = function(runid){
                     Texture = case_when((grepl("slopes", x2)==TRUE)~x3,
                                         (grepl("slopes", x2)==FALSE)~x4),
                     Texture = replace_na(Texture, "Refer to the soil file for details"),
-                    Gradient = replace_na(Gradient, "Refer to the soil file for details"))%>%
+                    Gradient = replace_na(Gradient, "Refer to the soil file for details"),
+                    Soil = str_remove(Soil, ",NA"))%>%
       dplyr::select(-c(wepp_id,x1,x2,x3,x4))%>%
       janitor::clean_names()%>%
       dplyr::mutate(soil = stringr::str_replace(soil,pattern = "-"," "))%>% 
