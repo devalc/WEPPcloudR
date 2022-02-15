@@ -57,7 +57,7 @@ gradient_dt = summarize_subcatch_by_var(subcatchments, "gradient")
 
 ### Land Cover & Soils 
 
-Land use, soil type and corresponding texture and gradient are displayed in the maps below. `r lulc_dt$Landuse[1]` is the dominant land cover type occupying `r lulc_dt$Area[1]`% of the watershed. `r lulc_dt$Landuse[2]` ocupues the second largest fraction of the total land cover of the watershed amounting `r lulc_dt$Area[2]`%. Soils are primarily of `r soil_dt$Soil[1]` and  `r soil_dt$Soil[2]` type and span about `r soil_dt$Area[1]`% and `r soil_dt$Area[2]`% of the watershed area respectively. `r if(texture_dt$Texture[1]=="Refer to the soil file for details") {"<!--"}` Majority (`r texture_dt$Area[1]`%) of the soils in the watershed have `r texture_dt$Texture[1]` texture followed by `r texture_dt$Texture[2]` texture.`r if(texture_dt$Texture[1]=="Refer to the soil file for details"){"-->"}` 
+Land use, soil type, and corresponding texture and gradient are displayed in the maps below. `r lulc_dt$Landuse[1]` is the dominant land cover type occupying `r lulc_dt$Area[1]`% of the watershed. `r lulc_dt$Landuse[2]` occupies the second largest fraction of the total land cover of the watershed amounting to `r lulc_dt$Area[2]`%. Soils are primarily of `r soil_dt$Soil[1]` and  `r soil_dt$Soil[2]` type and span about `r soil_dt$Area[1]`% and `r soil_dt$Area[2]`% of the watershed area respectively. `r if(texture_dt$Texture[1]=="Refer to the soil file for details") {"<!--"}` A majority (`r texture_dt$Area[1]`%) of the soils in the watershed have `r texture_dt$Texture[1]` texture followed by `r texture_dt$Texture[2]` texture.`r if(texture_dt$Texture[1]=="Refer to the soil file for details"){"-->"}` 
 `r gradient_dt$Area[1]`% of the watershed has `r gradient_dt$Gradient[1]` followed by `r gradient_dt$Area[2]`% consisting of `r gradient_dt$Gradient[2]`.
 
 ```{r, echo=FALSE,message=FALSE,warning=FALSE}
@@ -103,7 +103,7 @@ totalwatsed_wbal =totalwatsed_wbal %>% dplyr::filter(variable != "Precipitation 
 
 #### Watershed water balance 
 
-Large fraction of water was lost to `r totalwatsed_wbal$variable[2]` amounting  to `r round(totalwatsed_wbal$value[2])`% followed by `r totalwatsed_wbal$variable[3]` amounting to `r round(totalwatsed_wbal$value[3])`%.  
+A large fraction of water was lost to `r totalwatsed_wbal$variable[2]` amounting  to `r round(totalwatsed_wbal$value[2])`% followed by `r totalwatsed_wbal$variable[3]` amounting to `r round(totalwatsed_wbal$value[3])`%.  
 
 ```{r, echo=FALSE,message=FALSE,warning=FALSE, fig.cap=""}
 totalwatsed_wbal%>%
@@ -193,7 +193,7 @@ perc_flow = merged_WY %>%
 
 
 
-Figure below shows total simulated streamflow for each water year divided into baseflow, lateral flow, and runoff, and percentage of each relative to the streamflow. For the entire simulation period the average <span class="baseflow">baseflow was `r round(mean(perc_flow$PercentBaseflow))`%</span>, <span class="lateral">lateral flow was `r round(mean(perc_flow$PercentLateral))`%</span>, and <span class="runoff">runoff was `r round(mean(perc_flow$PercentRunoff))`%</span>. 
+The figure below shows the total simulated streamflow for each water year divided into baseflow, lateral flow, and runoff, and the percentage of each relative to the streamflow. For the entire simulation period, the average <span class="baseflow">baseflow was `r round(mean(perc_flow$PercentBaseflow))`%</span>, <span class="lateral">lateral flow was `r round(mean(perc_flow$PercentLateral))`%</span>, and <span class="runoff">runoff was `r round(mean(perc_flow$PercentRunoff))`%</span>. 
 
 ```{r, echo=FALSE, message=FALSE,warning=FALSE}
 
@@ -573,9 +573,9 @@ fig
 ```
 
 
-### Grouped summary tables
+### Summary tables
 
-#### Land use
+#### Grouped by land use
 
 The table below shows runoff, sediment and phosphorus means for different land use categories.
 
@@ -617,7 +617,7 @@ DT::datatable(landuse_summary_tab,
 ```
 
 
-#### Soils
+#### Grouped by soils
 
 The table below shows runoff, sediment and phosphorus means for different soil types.
 
@@ -658,7 +658,7 @@ DT::datatable(soils_summary_tab,
   
 ```
 
-#### Landuse and soils
+#### Grouped by landuse and soils
 
 The table below shows runoff, sediment and phosphorus means for different combinations of land use categories and soil types.
 
