@@ -577,7 +577,7 @@ fig
 
 #### Grouped by land use
 
-The table below shows runoff, sediment and phosphorus means for different land use categories.
+The table below shows runoff, sediment and phosphorus averages for different land use categories.
 
 ```{r, echo=FALSE, message=FALSE,warning=FALSE}
 landuse_summary_tab = subcatchments %>% as.data.frame() %>%
@@ -619,7 +619,7 @@ DT::datatable(landuse_summary_tab,
 
 #### Grouped by soils
 
-The table below shows runoff, sediment and phosphorus means for different soil types.
+The table below shows runoff, sediment and phosphorus averages for different soil types.
 
 ```{r, echo=FALSE, message=FALSE,warning=FALSE}
 soils_summary_tab = subcatchments   %>% as.data.frame() %>%
@@ -660,7 +660,7 @@ DT::datatable(soils_summary_tab,
 
 #### Grouped by landuse and soils
 
-The table below shows runoff, sediment and phosphorus means for different combinations of land use categories and soil types.
+The table below shows runoff, sediment and phosphorus averages for different combinations of land use categories and soil types.
 
 ```{r, echo=FALSE, message=FALSE,warning=FALSE}
 both_summary_tab = subcatchments   %>% as.data.frame() %>%
