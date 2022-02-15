@@ -576,39 +576,39 @@ fig
 
 #### Land use
 
-The table below shows runoff, sediment and phosphorus means for different land use categories.
+<!-- The table below shows runoff, sediment and phosphorus means for different land use categories. -->
 
 ```{r, echo=FALSE, message=FALSE,warning=FALSE}
-landuse_summary_tab = subcatchments   %>% as.data.frame() %>%
-    dplyr::select(dplyr::any_of("landuse","slope","runoff_mm", "so_ls_kg_ha", "sd_yd_kg_ha", "tp_kg_ha"))%>%
-  dplyr::rename("Landuse" = "landuse",
-                "Slope" = "slope",
-                "Soil Loss (kg/ha)"=  "so_ls_kg_ha",
-                "Sediment Yield (kg/ha)" = "sd_yd_kg_ha",
-                "Total Phosphorus (kg/ha)" = "tp_kg_ha",
-                "Runoff (mm)"="runoff_mm")%>%
-    group_by(Landuse) %>% dplyr::summarise_if(is.numeric, list(mean =
-                                                                       mean)) %>%
-                        dplyr::mutate_if(is.numeric, round, 2)
-colnames(landuse_summary_tab) = sapply(strsplit(colnames(landuse_summary_tab), "_mean"), `[[`, 1)
+# landuse_summary_tab = subcatchments   %>% as.data.frame() %>%
+#     dplyr::select(dplyr::any_of("landuse","slope","runoff_mm", "so_ls_kg_ha", "sd_yd_kg_ha", "tp_kg_ha"))%>%
+#   dplyr::rename("Landuse" = "landuse",
+#                 "Slope" = "slope",
+#                 "Soil Loss (kg/ha)"=  "so_ls_kg_ha",
+#                 "Sediment Yield (kg/ha)" = "sd_yd_kg_ha",
+#                 "Total Phosphorus (kg/ha)" = "tp_kg_ha",
+#                 "Runoff (mm)"="runoff_mm")%>%
+#     group_by(Landuse) %>% dplyr::summarise_if(is.numeric, list(mean =
+#                                                                        mean)) %>%
+#                         dplyr::mutate_if(is.numeric, round, 2)
+# colnames(landuse_summary_tab) = sapply(strsplit(colnames(landuse_summary_tab), "_mean"), `[[`, 1)
 
 ```
 
 ```{r, echo=FALSE}
-DT::datatable(landuse_summary_tab,
-              class = "display",
-              extensions=c("Scroller","Buttons"),
-              options=list(dom = 'BRSfrti',
-                           buttons = c('copy', 'csv', 'excel', 'pdf', 'print'),
-                           deferRender=TRUE,
-                           searching = FALSE,
-                           scrollX=400,
-                          scrollY=250,
-                           scroller=TRUE,
-                           autoWidth = TRUE,
-                           fixedHeader = FALSE,
-            fillContainer = FALSE),
-               rownames= FALSE)  
+# DT::datatable(landuse_summary_tab,
+#               class = "display",
+#               extensions=c("Scroller","Buttons"),
+#               options=list(dom = 'BRSfrti',
+#                            buttons = c('copy', 'csv', 'excel', 'pdf', 'print'),
+#                            deferRender=TRUE,
+#                            searching = FALSE,
+#                            scrollX=400,
+#                           scrollY=250,
+#                            scroller=TRUE,
+#                            autoWidth = TRUE,
+#                            fixedHeader = FALSE,
+#             fillContainer = FALSE),
+#                rownames= FALSE)  
 
   
 ```
