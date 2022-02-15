@@ -275,7 +275,7 @@ sd_r <- SharedData$new(sd_r)
 ```{r echo=FALSE}
 
 # # Create a filter input
-filter_slider("cumPercArea", "Filter map by Percent contributing area (%)", sd_r, column=~cumPercArea, step=1, width=600)
+filter_slider("cumPercArea", "Filter map and table by contributing area (%)", sd_r, column=~cumPercArea, step=1, width=600)
 
 
 ggplotly(ggplot() +
@@ -375,7 +375,7 @@ sd <- SharedData$new(sd)
 ```{r echo=FALSE}
 
 # # Create a filter input
-filter_slider("cumPercArea", "Filter map by Percent contributing area (%)", sd, column=~cumPercArea, step=1, width=600)
+filter_slider("cumPercArea", "Filter map and table by contributing area (%)", sd, column=~cumPercArea, step=1, width=600)
 
 
 ggplotly(ggplot() +
@@ -487,7 +487,7 @@ sd_tp <- SharedData$new(sd_tp)
 
 ```{r, echo=FALSE, message=FALSE,warning=FALSE}
 # # Create a filter input
-filter_slider("cumPercArea", "Filter map by Percent contributing area (%)", sd_tp, column=~cumPercArea, step=1, width=600)
+filter_slider("cumPercArea", "Filter map and table by contributing area (%)", sd_tp, column=~cumPercArea, step=1, width=600)
 
 
 ggplotly(ggplot() +
