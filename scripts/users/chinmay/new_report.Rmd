@@ -293,14 +293,12 @@ DT::datatable(sd_r,
               options=list(dom = 'BRSfrti',
                            buttons = c('copy', 'csv', 'excel', 'pdf', 'print'),
                            deferRender=TRUE,
-                           searching = FALSE,
                            scrollX=400,
-                          scrollY=250,
+                           scrollY=250,
                            scroller=TRUE,
                            autoWidth = TRUE,
                            fixedHeader = FALSE,
-            fillContainer = FALSE,
-                           # pageLength = 10,
+                           fillContainer = FALSE,
                            columnDefs = list(list(className = 'dt-left',
                                                   width = '100%',visible=FALSE,
                                                   targets=c(3:4,8)))),
@@ -397,14 +395,12 @@ DT::datatable(sd,
               options=list(dom = 'BRSfrti',
                            buttons = c('copy', 'csv', 'excel', 'pdf', 'print'),
                            deferRender=TRUE,
-                           searching = FALSE,
                            scrollX=400,
-                          scrollY=250,
+                           scrollY=250,
                            scroller=TRUE,
                            autoWidth = TRUE,
                            fixedHeader = FALSE,
-            fillContainer = FALSE,
-                           # pageLength = 10,
+                           fillContainer = FALSE,
                            columnDefs = list(list(className = 'dt-left',
                                                   width = '100%',visible=FALSE,
                                                   targets=c(3:4,8)))),
@@ -512,14 +508,12 @@ DT::datatable(sd_tp,
               options=list(dom = 'BRSfrti',
                            buttons = c('copy', 'csv', 'excel', 'pdf', 'print'),
                            deferRender=TRUE,
-                           searching = FALSE,
                            scrollX=400,
-                          scrollY=250,
+                           scrollY=250,
                            scroller=TRUE,
                            autoWidth = TRUE,
                            fixedHeader = FALSE,
-            fillContainer = FALSE,
-                           # pageLength = 10,
+                           fillContainer = FALSE,
                            columnDefs = list(list(className = 'dt-left',
                                                   width = '100%',visible=FALSE,
                                                   targets=c(3:4,8)))),
@@ -540,37 +534,41 @@ DT::datatable(sd_tp,
 
 ### Timeseries plots
             
-#### Water year
+#### Daily
 <div style="clear: both;"></div>
 
-</div>
-            
-```{r, echo=FALSE, message=FALSE,warning=FALSE}
-merged_WY_plt = merged_WY %>% dplyr::select(dplyr::any_of(c("WY", "Q_outlet_mm",
-                                          "Sediment_tonnes_ebe",
-                                          "SRP_tonnes_ebe","PP_tonnes_ebe",
-                                          "TP_tonnes_ebe")))%>% reshape2::melt(id.vars = "WY")
-```
           
 ```{r, echo=FALSE, message=FALSE,warning=FALSE}
-merged_WY_plt %>% plotly::plot_ly(x = ~WY, y = ~value, color = ~variable,
-                                            type = "scatter", mode= "line")
-```
-          
-          
-#### Daily
-          
-```{r, echo=FALSE, message=FALSE,warning=FALSE}
-merged_daily_df_plt =merged_daily_df %>% dplyr::select(dplyr::any_of(c("Date", "Q_outlet_mm",
-                                          "Sediment_tonnes_ebe",
-                                          "SRP_tonnes_ebe","PP_tonnes_ebe",
+daily_plt_precip = merged_daily_df %>% 
+  dplyr::select(dplyr::any_of(c("Date","precipitation_mm")))
+
+merged_daily_df_plt = merged_daily_df %>% dplyr::select(dplyr::any_of(c("Date", "Q_outlet_mm",
+                                                            "Sediment_tonnes_ebe",
+                                          "SRP_tonnes_ebe",
+                                          "PP_tonnes_ebe",
                                           "TP_tonnes_ebe"))) %>% reshape2::melt(id.vars = "Date")
+
 ```
 
           
 ```{r, echo=FALSE, message=FALSE,warning=FALSE}
-merged_daily_df_plt %>% plotly::plot_ly(x = ~Date, y = ~value, color = ~variable,
-                                                  type = "scatter", mode= "line")
+PrecipAx_d <- list(
+       overlaying = "y",
+       side = "right",
+       title = " ",
+       range = c(max(daily_plt_precip$precipitation_mm)*2.5,0),
+       showgrid=FALSE
+   )
+fig = plot_ly() %>% 
+  plotly::add_trace(x = ~Date, y = ~value, color = ~variable, data = merged_daily_df_plt,
+                                        type = "scatter", mode= "line")%>%
+  plotly::add_trace(x = ~Date, y = ~precipitation_mm, data = daily_plt_precip,
+                  type = "scatter", mode= "line", yaxis="y2",
+                  name="Precipitation (mm)") %>% 
+  layout(yaxis2=PrecipAx_d,legend = list(orientation = "h", x=0.05, y = 1.15,
+                                         font = list(family = "Courier", size = 16, color = "black")), yaxis = list(title = ""))
+fig
+
 ```
 
 
@@ -582,7 +580,7 @@ The table below shows runoff, sediment and phosphorus means for different land u
 
 ```{r, echo=FALSE, message=FALSE,warning=FALSE}
 landuse_summary_tab = subcatchments   %>% as.data.frame() %>%
-    dplyr::select(landuse,slope,runoff_mm, so_ls_kg_ha, sd_yd_kg_ha, tp_kg_ha)%>%
+    dplyr::select(dplyr::any_of("landuse","slope","runoff_mm", "so_ls_kg_ha", "sd_yd_kg_ha", "tp_kg_ha"))%>%
   dplyr::rename("Landuse" = "landuse",
                 "Slope" = "slope",
                 "Soil Loss (kg/ha)"=  "so_ls_kg_ha",
@@ -622,7 +620,7 @@ The table below shows runoff, sediment and phosphorus means for different soil t
 
 ```{r, echo=FALSE, message=FALSE,warning=FALSE}
 soils_summary_tab = subcatchments   %>% as.data.frame() %>%
-    dplyr::select(soil,slope,runoff_mm, so_ls_kg_ha, sd_yd_kg_ha, tp_kg_ha)%>%
+    dplyr::select(dplyr::any_of("soil","slope","runoff_mm", "so_ls_kg_ha", "sd_yd_kg_ha", "tp_kg_ha"))%>%
   dplyr::rename("Soil"="soil",
                 "Slope" = "slope",
                 "Soil Loss (kg/ha)"=  "so_ls_kg_ha",
@@ -644,7 +642,6 @@ DT::datatable(soils_summary_tab,
               options=list(dom = 'BRSfrti',
                            buttons = c('copy', 'csv', 'excel', 'pdf', 'print'),
                            deferRender=TRUE,
-                           searching = FALSE,
                            scrollX=250,
                           scrollY=250,
                            scroller=TRUE,
@@ -662,7 +659,7 @@ The table below shows runoff, sediment and phosphorus means for different combin
 
 ```{r, echo=FALSE, message=FALSE,warning=FALSE}
 both_summary_tab = subcatchments   %>% as.data.frame() %>%
-    dplyr::select(landuse,soil,slope,runoff_mm, so_ls_kg_ha, sd_yd_kg_ha, tp_kg_ha)%>%
+    dplyr::select(dplyr::any_of('landuse','soil','slope','runoff_mm', 'so_ls_kg_ha', 'sd_yd_kg_ha', 'tp_kg_ha'))%>%
   dplyr::rename("Landuse" = "landuse",
                 "Soil"="soil",
                 "Slope" = "slope",
@@ -685,7 +682,6 @@ DT::datatable(both_summary_tab,
               options=list(dom = 'BRSfrti',
                            buttons = c('copy', 'csv', 'excel', 'pdf', 'print'),
                            deferRender=TRUE,
-                           searching = FALSE,
                            scrollX=400,
                           scrollY=250,
                            scroller=TRUE,
