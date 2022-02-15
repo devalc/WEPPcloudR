@@ -623,10 +623,10 @@ The table below shows runoff, sediment and phosphorus means for different soil t
 
 ```{r, echo=FALSE, message=FALSE,warning=FALSE}
 soils_summary_tab = subcatchments   %>% as.data.frame() %>%
-  dplyr::select(dplyr::any_of(c("landuse","slope",
+  dplyr::select(dplyr::any_of(c("soil","slope",
                               "runoff_mm", "so_ls_kg_ha", 
                               "sd_yd_kg_ha", "tp_kg_ha")))%>%
-    plyr::rename( c("landuse" ="Landuse",
+    plyr::rename( c("soil" ="Soil",
                    "slope"="Slope",
                    "so_ls_kg_ha"="Soil Loss (kg/ha)",
                    "sd_yd_kg_ha" ="Sediment Yield (kg/ha)" ,
@@ -664,10 +664,11 @@ The table below shows runoff, sediment and phosphorus means for different combin
 
 ```{r, echo=FALSE, message=FALSE,warning=FALSE}
 both_summary_tab = subcatchments   %>% as.data.frame() %>%
-  dplyr::select(dplyr::any_of(c("landuse","slope",
+  dplyr::select(dplyr::any_of(c("landuse", "soil","slope",
                               "runoff_mm", "so_ls_kg_ha", 
                               "sd_yd_kg_ha", "tp_kg_ha")))%>%
     plyr::rename( c("landuse" ="Landuse",
+                    "soil" ="Soil",
                    "slope"="Slope",
                    "so_ls_kg_ha"="Soil Loss (kg/ha)",
                    "sd_yd_kg_ha" ="Sediment Yield (kg/ha)" ,
