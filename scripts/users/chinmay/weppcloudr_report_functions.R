@@ -43,6 +43,8 @@ gethillwatfiles<- function(runid){
   return(wat_dat)
 }
 
+
+
 ## --------------------------------------------------------------------------------------##
 
 calc_watbal <- function(link){
@@ -209,6 +211,8 @@ read_subcatchments = function(runid){
   
   phosporus_flag = paste0("/geodata/weppcloud_runs/",runid, "/wepp/runs/phosphorus.txt")
   
+  ermit_texture_csv = paste0("/geodata/weppcloud_runs/", runid,"/export/", paste0("ERMiT_input_", runid,".csv/?raw"))
+  
   
   if(file.exists(link)){
     
@@ -237,7 +241,7 @@ read_subcatchments = function(runid){
                                         (grepl("slopes", x2)==FALSE)~x4),
                     Texture = replace_na(Texture, "Refer to the soil file for details"),
                     Gradient = replace_na(Gradient, "Refer to the soil file for details"),
-                    Soil = str_remove(Soil, ",NA"))%>%
+                    Soil = str_remove(Soil, ",NA")) %>%
       dplyr::select(-c(wepp_id,x1,x2,x3,x4))%>%
       janitor::clean_names()%>%
       dplyr::mutate(soil = stringr::str_replace(soil,pattern = "-"," "))%>% 
@@ -260,10 +264,29 @@ read_subcatchments = function(runid){
                                             "Soil_Loss_kg" = "so_ls_kg_ha_kg")
     }
     
+    if (file.exists(ermit_texture_csv)) {
+      
+      ermit_texture = data.table::fread(ermit_texture_csv ,sep = ",")
+      
+      ermit_texture = ermit_texture %>%
+        dplyr::select(HS_ID,SOIL_TYPE)%>%
+        dplyr::rename("Texture" = "SOIL_TYPE",
+                      "wepp_id" = "HS_ID")
+      
+      geom_sum = dplyr::left_join(geom_sum, ermit_texture, by ="wepp_id")%>% 
+        dplyr::rename("Texture_string" = "Texture.x",
+                      "Texture" = "Texture.y")
+      
+    }else{
+      geom_sum = geom_sum 
+    }
+    
   }else{
     link <- paste0("https://wepp.cloud/weppcloud/runs/",runid, "/cfg/browse/export/arcmap/subcatchments.json")
     
     phosporus_flag = paste0("https://wepp.cloud/weppcloud/runs/",runid, "/cfg/browse/wepp/runs/phosphorus.txt")
+    
+    ermit_texture_csv = paste0("https://wepp.cloud/weppcloud/runs/", runid,"/cfg/browse/export/",paste0("ERMiT_input_", runid,".csv/?raw"))
     
     subcatchments <- sf::st_read(link,quiet = TRUE)
     
@@ -290,7 +313,7 @@ read_subcatchments = function(runid){
                                         (grepl("slopes", x2)==FALSE)~x4),
                     Texture = replace_na(Texture, "Refer to the soil file for details"),
                     Gradient = replace_na(Gradient, "Refer to the soil file for details"),
-                    Soil = str_remove(Soil, ",NA"))%>%
+                    Soil = str_remove(Soil, ",NA")) %>%
       dplyr::select(-c(wepp_id,x1,x2,x3,x4))%>%
       janitor::clean_names()%>%
       dplyr::mutate(soil = stringr::str_replace(soil,pattern = "-"," "))%>% 
@@ -310,6 +333,23 @@ read_subcatchments = function(runid){
       geom_sum = geom_sum %>% dplyr::rename("Sediment_Deposition_kg" = "sd_dp_kg_ha_kg",
                                             "Sediment_Yield_kg"= "sd_yd_kg_ha_kg",
                                             "Soil_Loss_kg" = "so_ls_kg_ha_kg")
+    }
+    
+    if (file.exists(ermit_texture_csv)) {
+      
+      ermit_texture = data.table::fread(ermit_texture_csv ,sep = ",")
+      
+      ermit_texture = ermit_texture %>%
+        dplyr::select(HS_ID,SOIL_TYPE)%>%
+        dplyr::rename("Texture" = "SOIL_TYPE",
+                      "wepp_id" = "HS_ID")
+      
+      geom_sum = dplyr::left_join(geom_sum, ermit_texture, by ="wepp_id")%>% 
+        dplyr::rename("Texture_string" = "Texture.x",
+                      "Texture" = "Texture.y")
+      
+    }else{
+      geom_sum = geom_sum 
     }
     
   }
@@ -354,6 +394,7 @@ read_subcatchments_map = function(runid){
                     Texture = replace_na(Texture, "Refer to the soil file for details"),
                     Gradient = replace_na(Gradient, "Refer to the soil file for details"),
                     Soil = str_remove(Soil, ",NA"))%>%
+      dplyr::rename("Texture_from_string" = "Texture") %>%
       dplyr::select(-c(wepp_id,x1,x2,x3,x4))%>%
       janitor::clean_names()%>%
       dplyr::mutate(soil = stringr::str_replace(soil,pattern = "-"," "),
@@ -408,6 +449,7 @@ read_subcatchments_map = function(runid){
                     Texture = replace_na(Texture, "Refer to the soil file for details"),
                     Gradient = replace_na(Gradient, "Refer to the soil file for details"),
                     Soil = str_remove(Soil, ",NA"))%>%
+      dplyr::rename("Texture_from_string" = "Texture") %>%
       dplyr::select(-c(wepp_id,x1,x2,x3,x4))%>%
       janitor::clean_names()%>%
       dplyr::mutate(soil = stringr::str_replace(soil,pattern = "-"," "),
