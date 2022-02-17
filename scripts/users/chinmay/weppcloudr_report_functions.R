@@ -655,8 +655,8 @@ totwatsed_to_wbal = function(daily_totwatsed_df){
       "Transpiration (%)" = "transpiration_mm",
       "Evaporation (%)" = "evaporation_mm",
       "Percolation (%)" = "percolation_mm",
-      "Runoff(%)" = "runoff_mm",
-      "Lateral flow(%)" = "lateral_flow_mm",
+      "Runoff (%)" = "runoff_mm",
+      "Lateral flow (%)" = "lateral_flow_mm",
       "Change in storage (%)" = "WbalErr_mm"
     ) %>%
     tidyr::gather(key = "variable") %>% 
@@ -664,6 +664,72 @@ totwatsed_to_wbal = function(daily_totwatsed_df){
   
   return(totwatsed2wbal)
 } 
+## --------------------------------------------------------------------------------------##
+
+totwatsed_to_wbal_map_dfs = function(daily_totwatsed_df){
+  
+  totwatsed2wbal = daily_totwatsed_df %>% dplyr::select("runid",
+                                                        "WY",
+                                                        "Date",
+                                                        "precipitation_mm",
+                                                        "rain_melt_mm",
+                                                        "transpiration_mm",
+                                                        "evaporation_mm",
+                                                        "percolation_mm",
+                                                        "runoff_mm",
+                                                        "lateral_flow_mm"
+  )%>% dplyr::group_by(runid)%>% dplyr::filter(Date >= paste0(lubridate::year(Date[1]),"-10-01"))
+  
+  n_wys = totwatsed2wbal %>%
+    dplyr::select(runid,WY) %>%
+    dplyr::group_by(runid) %>% 
+    dplyr::summarise(wys=n_distinct(WY))
+  
+  totwatsed2wbal = totwatsed2wbal %>%
+    dplyr::select(- c(Date,WY))%>%
+    dplyr::group_by(runid)%>%
+    dplyr::summarise_all(.funs = sum) 
+  
+  totwatsed2wbal = dplyr::left_join(totwatsed2wbal, n_wys, by = "runid")  %>%
+    dplyr::mutate(
+      precipitation_mm = precipitation_mm / wys,
+      rain_melt_mm = rain_melt_mm / wys,
+      transpiration_mm = transpiration_mm / wys,
+      evaporation_mm = evaporation_mm / wys,
+      percolation_mm = percolation_mm / wys,
+      runoff_mm = runoff_mm / wys,
+      lateral_flow_mm = lateral_flow_mm / wys) %>%
+    dplyr::mutate(
+      rain_melt_mm = rain_melt_mm / precipitation_mm * 100,
+      transpiration_mm = transpiration_mm / precipitation_mm *
+        100,
+      evaporation_mm = evaporation_mm / precipitation_mm *
+        100,
+      percolation_mm = percolation_mm / precipitation_mm *
+        100,
+      runoff_mm = runoff_mm / precipitation_mm * 100,
+      lateral_flow_mm = lateral_flow_mm / precipitation_mm *
+        100,
+      WbalErr_mm = rain_melt_mm - (
+        transpiration_mm + evaporation_mm + percolation_mm + runoff_mm + lateral_flow_mm
+      )
+    ) %>%
+    dplyr::rename(
+      "Precipitation (mm)" = "precipitation_mm",
+      "Rain+Melt (%)" = "rain_melt_mm",
+      "Transpiration (%)" = "transpiration_mm",
+      "Evaporation (%)" = "evaporation_mm",
+      "Percolation (%)" = "percolation_mm",
+      "Runoff(%)" = "runoff_mm",
+      "Lateral flow(%)" = "lateral_flow_mm",
+      "Change in storage (%)" = "WbalErr_mm"
+    ) %>% dplyr::select(-wys)%>%
+    # tidyr::gather(key = "variable",value = "value", -runid) %>% 
+    dplyr::mutate(dplyr::across(where(is.numeric), round, 2))
+  
+  return(totwatsed2wbal)
+} 
+
 ## --------------------------------------------------------------------------------------##
  
 merge_daily_Vars <- function(totalwatsed_df, chanwb_df, ebe_df){
@@ -726,14 +792,15 @@ make_leaflet_map = function(plot_df, plot_var, col_pal_type, unit = NULL){
   
   rlang::eval_tidy(rlang::quo_squash(quo({
     leaflet::leaflet(plot_df) %>% 
-      addPolygons(color = ~pal(dplyr::pull(plot_df, !!v)))%>%
+      # addPolygons(color = ~pal(dplyr::pull(plot_df, !!v)))%>%
       leaflet::addProviderTiles(leaflet::providers$Esri.WorldTopoMap)%>%
       leaflet::addPolygons(fillColor = ~pal(!!v),
                            weight = 2,
-                           opacity = 1,
+                           opacity =1,
                            color = "white",
                            dashArray = "3",
-                           fillOpacity = 0.7,
+                           fillOpacity = 0.5,
+                           group = as.character(dplyr::as_label(v)),
                            popup = ~paste("WeppID:", plot_df$wepp_id,
                                           "<br>",if(!is.null(unit)) {
                                             paste0(as_label(v)," (",unit,") ",":")
@@ -748,8 +815,63 @@ make_leaflet_map = function(plot_df, plot_var, col_pal_type, unit = NULL){
                                                                         dashArray = "",
                                                                         fillOpacity = 0.7,
                                                                         bringToFront = TRUE))%>%
-      leaflet::addLegend(pal = pal,
-                         values = ~dplyr::pull(plot_df, !!v),
-                         title = ~as_label(v))
+      # addControl(as.character(dplyr::as_label(v)), position = "topright")%>%
+      addLayersControl(position = "topleft",
+                       overlayGroups = as.character(dplyr::as_label(v)),
+                       options = layersControlOptions(collapsed = FALSE))
   })))
 }
+
+## --------------------------------------------------------------------------------------##
+# make_leaflet_map_multi = function(plot_df, plot_var, col_pal_type, unit = NULL){
+#   v <- dplyr::enquo(plot_var)
+#   
+#   if (col_pal_type == "Factor") {
+#     pal <- colorFactor(palette = "inferno", dplyr::pull(plot_df, !!v))
+#     
+#   }else
+#     if (col_pal_type == "Numeric") {
+#       pal <- colorNumeric(palette = "inferno", dplyr::pull(plot_df, !!v))
+#       
+#     }else
+#       if (col_pal_type == "Bin") {
+#         pal <- colorBin(palette = "inferno", dplyr::pull(plot_df, !!v))
+#         
+#       }else
+#         if (col_pal_type == "Quantile") {
+#           pal <- colorQuantile(palette = "inferno", dplyr::pull(plot_df, !!v))
+#           
+#         }
+#   
+#   rlang::eval_tidy(rlang::quo_squash(quo({
+#     leaflet::leaflet(plot_df) %>% 
+#       addPolygons(color = ~pal(dplyr::pull(plot_df, !!v)))%>%
+#       leaflet::addProviderTiles(leaflet::providers$Esri.WorldTopoMap)%>%
+#       leaflet::addPolygons(fillColor = ~pal(!!v),
+#                            weight = 2,
+#                            opacity = 1,
+#                            color = "white",
+#                            dashArray = "3",
+#                            fillOpacity = 0.7,
+#                            popup = ~paste("WeppID:", plot_df$wepp_id,
+#                                           "<br>","Watershed:", plot_df$runid,
+#                                           "<br>",if(!is.null(unit)) {
+#                                             paste0(as_label(v)," (",unit,") ",":")
+#                                           }else{paste0(as_label(v),":")}, dplyr::pull(plot_df, !!v)),
+#                            label = ~paste("WeppID:", plot_df$wepp_id,
+#                                           "\n",
+#                                           if(!is.null(unit)) {
+#                                             paste0(as_label(v)," (",unit,") ",":")
+#                                           }else{paste0(as_label(v),":")}, dplyr::pull(plot_df, !!v)),
+#                            highlightOptions = leaflet::highlightOptions(weight = 3,
+#                                                                         color = "#000",
+#                                                                         dashArray = "",
+#                                                                         fillOpacity = 0.7,
+#                                                                         bringToFront = TRUE))%>%
+#       addControl(as.character(dplyr::as_label(v)), position = "topright",)
+#     # %>%
+#     #   leaflet::addLegend(pal = pal,
+#     #                      values = ~dplyr::pull(plot_df, !!v),
+#     #                      title = ~as_label(v))
+#   })))
+# }
