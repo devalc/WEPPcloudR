@@ -519,13 +519,13 @@ gen_cumulative_plt_df <- function(subcatch, var_to_use){
 
   c_plt_df = subcatch %>%
       # as.data.frame()%>%
-      dplyr::select(wepp_id,!!var_to_use,area_ha,geometry,soil,Texture,slope)%>%
+      dplyr::select(wepp_id,!!var_to_use,area_ha,geometry,landuse,soil,Texture,slope)%>%
       dplyr::arrange(desc(!!var_to_use)) %>%
       dplyr::mutate(cumPercArea = cumsum(area_ha) / sum(area_ha) *100,
                     new_col = cumsum(!!var_to_use) / sum(!!var_to_use) *100)%>%
     dplyr::mutate_at(vars(new_col), ~replace(., is.nan(.), 0))%>%
     dplyr::mutate(dplyr::across(where(is.numeric), round, 1))%>%
-    dplyr::select(wepp_id,!!var_to_use,area_ha,geometry,cumPercArea,new_col,
+    dplyr::select(wepp_id,!!var_to_use,area_ha,geometry,cumPercArea,new_col,landuse,
                   soil,Texture,slope)
   
   colnames(c_plt_df)[6] = paste0("cum_",colnames(c_plt_df)[2])
