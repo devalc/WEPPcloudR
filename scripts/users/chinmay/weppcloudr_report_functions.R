@@ -530,11 +530,7 @@ gen_cumulative_plt_df <- function(subcatch, var_to_use){
   
   colnames(c_plt_df)[6] = paste0("cum_",colnames(c_plt_df)[2])
   
-  
-  
   return(c_plt_df)
-
-
 
 }
 
