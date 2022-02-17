@@ -400,7 +400,7 @@ DT::datatable(sd,
                            fillContainer = FALSE,
                            columnDefs = list(list(className = 'dt-left',
                                                   width = '100%',visible=FALSE,
-                                                  targets=c(3:4,8)))),
+                                                  targets=c(3:4,9)))),
                rownames= FALSE)%>%
   formatStyle(
     'Sediment_Yield_kg',
@@ -513,7 +513,7 @@ DT::datatable(sd_tp,
                            fillContainer = FALSE,
                            columnDefs = list(list(className = 'dt-left',
                                                   width = '100%',visible=FALSE,
-                                                  targets=c(3:4,8)))),
+                                                  targets=c(3:4,9)))),
                rownames= FALSE)%>%
   formatStyle(
     'Total_Phosphorus_kg',
