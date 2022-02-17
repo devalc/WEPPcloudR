@@ -211,7 +211,8 @@ read_subcatchments = function(runid){
   
   phosporus_flag = paste0("/geodata/weppcloud_runs/",runid, "/wepp/runs/phosphorus.txt")
   
-  ermit_texture_csv = paste0("/geodata/weppcloud_runs/", runid,"/export/", paste0("ERMiT_input_", runid,".csv/?raw"))
+  ermit_texture_csv = paste0("/geodata/weppcloud_runs/", runid,"/export/", 
+                             paste0("ERMiT_input_", runid,".csv"))
   
   
   if(file.exists(link)){
@@ -266,7 +267,7 @@ read_subcatchments = function(runid){
     
     if (file.exists(ermit_texture_csv)) {
       
-      ermit_texture = data.table::fread(ermit_texture_csv ,sep = ",")
+      ermit_texture = data.table::fread(paste0(ermit_texture_csv,"/?raw"), sep = ",")
       
       ermit_texture = ermit_texture %>%
         dplyr::select(HS_ID,SOIL_TYPE)%>%
