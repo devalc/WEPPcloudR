@@ -700,13 +700,13 @@ DT::datatable(texture_summary_tab,
   
 ```
 
-#### Grouped by landuse and soils
+#### Grouped by landuse and soils type and texture.
 
 The table below shows runoff, sediment and phosphorus averages for different combinations of land use categories and soil types.
 
 ```{r, echo=FALSE, message=FALSE,warning=FALSE}
 both_summary_tab = subcatchments   %>% as.data.frame() %>%
-  dplyr::select(dplyr::any_of(c("landuse", "soil","slope",
+  dplyr::select(dplyr::any_of(c("landuse", "soil","Texture","slope",
                               "runoff_mm", "so_ls_kg_ha", 
                               "sd_yd_kg_ha", "tp_kg_ha")))%>%
     plyr::rename( c("landuse" ="Landuse",
@@ -716,7 +716,7 @@ both_summary_tab = subcatchments   %>% as.data.frame() %>%
                    "sd_yd_kg_ha" ="Sediment Yield (kg/ha)" ,
                    "tp_kg_ha" ="Total Phosphorus (kg/ha)",
                   "runoff_mm"="Runoff (mm)"),warn_missing = FALSE)%>%
-    group_by(Landuse, Soil) %>% dplyr::summarise_if(is.numeric, list(mean =
+    group_by(Landuse, Soil,Texture) %>% dplyr::summarise_if(is.numeric, list(mean =
                                                                        mean)) %>%
                         dplyr::mutate_if(is.numeric, round, 2)
 
