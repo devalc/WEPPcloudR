@@ -366,6 +366,9 @@ read_subcatchments_map = function(runid){
   
   phosporus_flag = paste0("/geodata/weppcloud_runs/",runid, "/wepp/runs/phosphorus.txt")
   
+  ermit_texture_csv = paste0("/geodata/weppcloud_runs/", runid,"/export/", 
+                             paste0("ERMiT_input_", runid,".csv"))
+  
   
   if(file.exists(link)){
     
@@ -395,7 +398,7 @@ read_subcatchments_map = function(runid){
                     Texture = replace_na(Texture, "Refer to the soil file for details"),
                     Gradient = replace_na(Gradient, "Refer to the soil file for details"),
                     Soil = str_remove(Soil, ",NA"))%>%
-      dplyr::rename("Texture_from_string" = "Texture") %>%
+      # dplyr::rename("Texture_from_string" = "Texture") %>%
       dplyr::select(-c(wepp_id,x1,x2,x3,x4))%>%
       janitor::clean_names()%>%
       dplyr::mutate(soil = stringr::str_replace(soil,pattern = "-"," "),
@@ -419,10 +422,29 @@ read_subcatchments_map = function(runid){
                                             "Soil_Loss_kg" = "so_ls_kg_ha_kg")
     }
     
+    if (file.exists(ermit_texture_csv)) {
+      
+      ermit_texture = data.table::fread(ermit_texture_csv ,sep = ",")
+      
+      ermit_texture = ermit_texture %>%
+        dplyr::select(HS_ID,SOIL_TYPE)%>%
+        dplyr::rename("Texture" = "SOIL_TYPE",
+                      "wepp_id" = "HS_ID")
+      
+      geom_sum = dplyr::left_join(geom_sum, ermit_texture, by ="wepp_id")%>% 
+        dplyr::rename("Texture_string" = "Texture.x",
+                      "Texture" = "Texture.y")
+      
+    }else{
+      geom_sum = geom_sum 
+    }
+    
   }else{
     link <- paste0("https://wepp.cloud/weppcloud/runs/",runid, "/cfg/browse/export/arcmap/subcatchments.json")
     
     phosporus_flag = paste0("https://wepp.cloud/weppcloud/runs/",runid, "/cfg/browse/wepp/runs/phosphorus.txt")
+    
+    ermit_texture_csv = paste0("https://wepp.cloud/weppcloud/runs/", runid,"/cfg/browse/export/",paste0("ERMiT_input_", runid,".csv/?raw"))
     
     subcatchments <- sf::st_read(link,quiet = TRUE)
     
@@ -450,7 +472,7 @@ read_subcatchments_map = function(runid){
                     Texture = replace_na(Texture, "Refer to the soil file for details"),
                     Gradient = replace_na(Gradient, "Refer to the soil file for details"),
                     Soil = str_remove(Soil, ",NA"))%>%
-      dplyr::rename("Texture_from_string" = "Texture") %>%
+      # dplyr::rename("Texture_from_string" = "Texture") %>%
       dplyr::select(-c(wepp_id,x1,x2,x3,x4))%>%
       janitor::clean_names()%>%
       dplyr::mutate(soil = stringr::str_replace(soil,pattern = "-"," "),
@@ -471,6 +493,23 @@ read_subcatchments_map = function(runid){
       geom_sum = geom_sum %>% dplyr::rename("Sediment_Deposition_kg" = "sd_dp_kg_ha_kg",
                                             "Sediment_Yield_kg"= "sd_yd_kg_ha_kg",
                                             "Soil_Loss_kg" = "so_ls_kg_ha_kg")
+    }
+    
+    if (file.exists(ermit_texture_csv)) {
+
+      ermit_texture = data.table::fread(ermit_texture_csv ,sep = ",")
+
+      ermit_texture = ermit_texture %>%
+        dplyr::select(HS_ID,SOIL_TYPE)%>%
+        dplyr::rename("Texture" = "SOIL_TYPE",
+                      "wepp_id" = "HS_ID")
+
+      geom_sum = dplyr::left_join(geom_sum, ermit_texture, by ="wepp_id")%>%
+        dplyr::rename("Texture_string" = "Texture.x",
+                      "Texture" = "Texture.y")
+
+    }else{
+      geom_sum = geom_sum
     }
     
   }
@@ -532,6 +571,29 @@ gen_cumulative_plt_df <- function(subcatch, var_to_use){
   
   return(c_plt_df)
 
+}
+
+## --------------------------------------------------------------------------------------##
+gen_cumulative_plt_df_map <- function(subcatch, var_to_use){
+  
+  var_to_use = dplyr::enquo(var_to_use)
+  
+  c_plt_df = subcatch %>%
+    dplyr::group_by(Watershed, scenario)%>%
+    # dplyr::select(wepp_id,!!var_to_use,area_ha,geometry,landuse,soil,Texture,slope)%>%
+    dplyr::arrange(desc(!!var_to_use)) %>%
+    dplyr::mutate(cumPercArea = cumsum(area_ha) / sum(area_ha) *100,
+                  new_col = cumsum(!!var_to_use) / sum(!!var_to_use) *100)%>%
+    dplyr::mutate_at(vars(new_col), ~replace(., is.nan(.), 0))%>%
+    dplyr::mutate(dplyr::across(where(is.numeric), round, 1))%>%
+    dplyr::select(wepp_id,!!var_to_use,area_ha,geometry,cumPercArea,new_col,landuse,
+    soil,Texture,slope,Watershed,scenario,sd_yd_kg_ha,tp_kg_ha)%>%
+    ungroup()
+  
+  colnames(c_plt_df)[6] = paste0("cum_",colnames(c_plt_df)[2])
+  
+  return(c_plt_df)
+  
 }
 
 
@@ -862,55 +924,99 @@ make_leaflet_map = function(plot_df, plot_var, col_pal_type, unit = NULL){
 }
 
 ## --------------------------------------------------------------------------------------##
-# make_leaflet_map_multi = function(plot_df, plot_var, col_pal_type, unit = NULL){
-#   v <- dplyr::enquo(plot_var)
-#   
-#   if (col_pal_type == "Factor") {
-#     pal <- colorFactor(palette = "inferno", dplyr::pull(plot_df, !!v))
-#     
-#   }else
-#     if (col_pal_type == "Numeric") {
-#       pal <- colorNumeric(palette = "inferno", dplyr::pull(plot_df, !!v))
-#       
-#     }else
-#       if (col_pal_type == "Bin") {
-#         pal <- colorBin(palette = "inferno", dplyr::pull(plot_df, !!v))
-#         
-#       }else
-#         if (col_pal_type == "Quantile") {
-#           pal <- colorQuantile(palette = "inferno", dplyr::pull(plot_df, !!v))
-#           
-#         }
-#   
-#   rlang::eval_tidy(rlang::quo_squash(quo({
-#     leaflet::leaflet(plot_df) %>% 
-#       addPolygons(color = ~pal(dplyr::pull(plot_df, !!v)))%>%
-#       leaflet::addProviderTiles(leaflet::providers$Esri.WorldTopoMap)%>%
-#       leaflet::addPolygons(fillColor = ~pal(!!v),
-#                            weight = 2,
-#                            opacity = 1,
-#                            color = "white",
-#                            dashArray = "3",
-#                            fillOpacity = 0.7,
-#                            popup = ~paste("WeppID:", plot_df$wepp_id,
-#                                           "<br>","Watershed:", plot_df$runid,
-#                                           "<br>",if(!is.null(unit)) {
-#                                             paste0(as_label(v)," (",unit,") ",":")
-#                                           }else{paste0(as_label(v),":")}, dplyr::pull(plot_df, !!v)),
-#                            label = ~paste("WeppID:", plot_df$wepp_id,
-#                                           "\n",
-#                                           if(!is.null(unit)) {
-#                                             paste0(as_label(v)," (",unit,") ",":")
-#                                           }else{paste0(as_label(v),":")}, dplyr::pull(plot_df, !!v)),
-#                            highlightOptions = leaflet::highlightOptions(weight = 3,
-#                                                                         color = "#000",
-#                                                                         dashArray = "",
-#                                                                         fillOpacity = 0.7,
-#                                                                         bringToFront = TRUE))%>%
-#       addControl(as.character(dplyr::as_label(v)), position = "topright",)
-#     # %>%
-#     #   leaflet::addLegend(pal = pal,
-#     #                      values = ~dplyr::pull(plot_df, !!v),
-#     #                      title = ~as_label(v))
-#   })))
-# }
+make_leaflet_map_multi = function(plot_df, plot_var, col_pal_type, unit = NULL){
+  v <- dplyr::enquo(plot_var)
+
+  if (col_pal_type == "Factor") {
+    pal <- colorFactor(palette = "inferno", dplyr::pull(plot_df, !!v))
+
+  }else
+    if (col_pal_type == "Numeric") {
+      pal <- colorNumeric(palette = "inferno", dplyr::pull(plot_df, !!v))
+
+    }else
+      if (col_pal_type == "Bin") {
+        pal <- colorBin(palette = "inferno", dplyr::pull(plot_df, !!v))
+
+      }else
+        if (col_pal_type == "Quantile") {
+          pal <- colorQuantile(palette = "inferno", dplyr::pull(plot_df, !!v))
+
+        }
+
+  rlang::eval_tidy(rlang::quo_squash(quo({
+    leaflet::leaflet(plot_df) %>%
+      addPolygons(color = ~pal(dplyr::pull(plot_df, !!v)))%>%
+      leaflet::addProviderTiles(leaflet::providers$Esri.WorldTopoMap)%>%
+      leaflet::addPolygons(fillColor = ~pal(!!v),
+                           weight = 2,
+                           opacity = 1,
+                           color = "white",
+                           dashArray = "3",
+                           fillOpacity = 0.7,
+                           popup = ~paste("WeppID:", plot_df$wepp_id,
+                                          "<br>",
+                                          "Watershed:", plot_df$Watershed,
+                                          "<br>",
+                                          "Scenario:", plot_df$scenario,
+                                          "<br>",
+                                          "runid:", plot_df$runid,
+                                          "<br>",
+                                          if(!is.null(unit)) {
+                                            paste0(as_label(v)," (",unit,") ",":")
+                                          }else{paste0(as_label(v),":")}, dplyr::pull(plot_df, !!v)),
+                           label = ~paste("WeppID:", plot_df$wepp_id,
+                                          "\n",
+                                          if(!is.null(unit)) {
+                                            paste0(as_label(v)," (",unit,") ",":")
+                                          }else{paste0(as_label(v),":")}, dplyr::pull(plot_df, !!v)),
+                           highlightOptions = leaflet::highlightOptions(weight = 3,
+                                                                        color = "#000",
+                                                                        dashArray = "",
+                                                                        fillOpacity = 0.7,
+                                                                        bringToFront = TRUE))%>%
+      addLayersControl(position = "topleft",
+                       overlayGroups = as.character(dplyr::as_label(v)),
+                       options = layersControlOptions(collapsed = FALSE))
+  })))
+}
+
+## --------------------------------------------------------------------------------------##
+map_multiplelayers_runoff <- function(df) {
+  
+  #number of groups
+  n <- n_distinct(df$Watershed_scenario)
+  #colorpal
+  pal1 <- colorNumeric("viridis", domain = df$runoff_mm)
+  
+  #base map
+  map <- leaflet() %>%
+    addProviderTiles(providers$CartoDB.Positron)
+  
+  k=unique(df$Watershed_scenario)
+  
+  for (i in k) {
+    
+    a= df %>% filter(Watershed_scenario == i)
+    map <- map %>%
+      addPolygons(
+        data= a,
+        fillColor = ~pal1(runoff_mm),
+        weight = 2,
+        opacity =1,
+        color = "white",
+        dashArray = "3",
+        fillOpacity = 1,
+        group = i,
+        popup = ~paste("WeppID:", df$wepp_id,
+                       "<br>",
+                       "Runoff (mm):", df$runoff_mm
+        ))
+  }
+  #create layer control
+  map %>%
+    addLayersControl(
+      overlayGroups = k,
+      options = layersControlOptions(collapsed = FALSE)) %>%
+    hideGroup(k[2:n])
+}
