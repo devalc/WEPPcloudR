@@ -49,16 +49,20 @@ library(tidytext, quietly = TRUE)
 # 
 
 
-a = "[{\"runid\": \"lt_202012_10_Snow_Creek_CurCond\", \"cfg\": \"lt-wepp_bd16b69-snow\", \"name\": \"lt_202012_10_Snow_Creek_CurCond\", \"scenario\": null, \"location_hash\": \"blend.swaying.frantically\"},
-{\"runid\": \"lt_202012_20_Mill_Creek_CurCond\", \"cfg\": \"lt-wepp_bd16b69-snow\", \"name\": \"lt_202012_20_Mill_Creek_CurCond\", \"scenario\": null, \"location_hash\": \"lofts.pathfinder.careless\"},
-{\"runid\": \"lt_202012_5_Dollar_Creek_CurCond\", \"cfg\": \"lt-wepp_bd16b69-snow\", \"name\": \"lt_202012_5_Dollar_Creek_CurCond\", \"scenario\": null, \"location_hash\": \"total.stress.oiled\"},
-{\"runid\": \"lt_202012_10_Snow_Creek_SimFire.fccsFuels_obs_cli\", \"cfg\": \"lt-fire-snow.cfg\", \"name\": \"lt_202012_10_Snow_Creek_SimFire.fccsFuels_obs_cli\", \"scenario\": null, \"location_hash\": \"blend.swaying.frantically\"}]"
+a = params$ws
+
+# "[{\"runid\": \"lt_202012_10_Snow_Creek_CurCond\", \"cfg\": \"lt-wepp_bd16b69-snow\", \"name\": \"lt_202012_10_Snow_Creek_CurCond\", \"scenario\": null, \"location_hash\": \"blend.swaying.frantically\"},
+#{\"runid\": \"lt_202012_20_Mill_Creek_CurCond\", \"cfg\": \"lt-wepp_bd16b69-snow\", \"name\": \"lt_202012_20_Mill_Creek_CurCond\", \"scenario\": null, \"location_hash\": \"lofts.pathfinder.careless\"},
+#{\"runid\": \"lt_202012_5_Dollar_Creek_CurCond\", \"cfg\": \"lt-wepp_bd16b69-snow\", \"name\": \"lt_202012_5_Dollar_Creek_CurCond\", \"scenario\": null, \"location_hash\": \"total.stress.oiled\"},
+#{\"runid\": \"lt_202012_10_Snow_Creek_SimFire.fccsFuels_obs_cli\", \"cfg\": \"lt-fire-snow.cfg\", \"name\": \"lt_202012_10_Snow_Creek_SimFire.fccsFuels_obs_cli\", \"scenario\": null, \"location_hash\": \"blend.swaying.frantically\"}]"
 # print(a)
 ```
 
 
-```{r, echo=FALSE, message=FALSE, warning=FALSE}
+```{r, echo=TRUE, message=FALSE, warning=FALSE}
 runs_info=jsonlite::fromJSON(a) %>% dplyr::mutate(id = row_number()) 
+
+print(runs_info)
 
 
 # runs_info = runs_info %>%
