@@ -20,3 +20,14 @@ configure git to store credentials
 https://stackoverflow.com/questions/35942754/how-can-i-save-username-and-password-in-git#35942890
 
 Create a API token in github under Settings -> Developer Settings -> Personal Access Tokens to use as password
+
+## geoserver access
+
+1. connect to Uidaho VPN
+2. ssh to setup port forwarding
+
+```
+> ssh -L 1337:localhost:1337 <username>@dev.wepp.cloud
+```
+
+3. open geoserver admini page in browser http://localhost:1337/geoserver/
