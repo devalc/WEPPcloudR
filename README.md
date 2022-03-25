@@ -31,3 +31,16 @@ Create a API token in github under Settings -> Developer Settings -> Personal Ac
 ```
 
 3. open geoserver admini page in browser http://localhost:1337/geoserver/
+
+## workaround for not starting after reboot
+
+```
+> sudo systemctl stop geoserver.service
+> sudo systemctl start geoserver.service
+```
+
+can check status with
+
+```
+> sudo systemctl status geoserver.service
+```
