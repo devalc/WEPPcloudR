@@ -30,7 +30,7 @@ Create a API token in github under Settings -> Developer Settings -> Personal Ac
 > ssh -L 1337:localhost:1337 <username>@dev.wepp.cloud
 ```
 
-3. open geoserver admini page in browser http://localhost:1337/geoserver/
+3. open geoserver admin page in browser http://localhost:1337/geoserver/
 
 ## workaround for not starting after reboot
 
