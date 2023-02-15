@@ -9,7 +9,6 @@ output:
     mathjax: default
     use_fontawesome: true
     toc: true
-    toc_float: true
 params:
   proj_runid: default
 ---
@@ -142,28 +141,38 @@ leafsync::sync(landuse_map,
 
 <div style="clear: both;"></div>
 
+### Climate Summary
+```{r, echo=FALSE,message=FALSE,warning=FALSE}
+cli_sum = get_cli_summary(params$proj_runid)
+```
+
+During the simulation period between `r as.numeric(yr_min)` and `r as.numeric(yr_max)`, `r as.numeric(stringr::str_extract_all(cli_sum, "\\d+([.,]\\d+)?")[[1]][1])` storms produced `r round(as.numeric(stringr::str_extract_all(cli_sum, "\\d+([.,]\\d+)?")[[1]][2]))` mm of rainfall on an average annual basis. `r as.numeric(stringr::str_extract_all(cli_sum, "\\d+([.,]\\d+)?")[[3]][1])` runoff events produced `r round(as.numeric(stringr::str_extract_all(cli_sum, "\\d+([.,]\\d+)?")[[3]][2]))` mm of runoff passing through the watershed outlet on an average annual basis.
+
+
+
 ### Hydrology
 
-This watershed received an average annual precipitation of `r round(totalwatsed_wbal$value[1])` mm over the `r (as.numeric(yr_max) - as.numeric(yr_min))+1` year simulation period between `r as.numeric(yr_min)` and `r as.numeric(yr_max)`. 
-
 ```{r, echo=FALSE,message=FALSE,warning=FALSE}
-totalwatsed_wbal =totalwatsed_wbal %>% dplyr::filter(variable != "Precipitation (mm)")%>% dplyr::mutate(variable=recode(variable, 'Rain+Melt (%)'='Precipitation (%)')) %>% 
+totalwatsed_wbal =totalwatsed_wbal %>% 
+  dplyr::filter(variable != "Precipitation (mm)")%>% 
+  dplyr::mutate(variable=recode(variable, 'Rain+Melt (%)'='Precipitation (%)')) %>%
+  dplyr::filter(variable != "Precipitation (%)") %>%
   dplyr::arrange(-value)
 ```
 
 
 #### Watershed water balance 
 
-A large fraction of water was lost to `r tolower(gsub("[(%)]","",totalwatsed_wbal$variable[2]))` amounting  to `r round(totalwatsed_wbal$value[2])`% followed by `r tolower(gsub("[(%)]","",totalwatsed_wbal$variable[3]))` amounting to `r round(totalwatsed_wbal$value[3])`%.  
+A large fraction of water was lost to `r tolower(gsub("[(%)]","",totalwatsed_wbal$variable[1]))` amounting  to `r round(totalwatsed_wbal$value[1])`% followed by `r tolower(gsub("[(%)]","",totalwatsed_wbal$variable[2]))` amounting to `r round(totalwatsed_wbal$value[2])`%.  
 
 ```{r, echo=FALSE,message=FALSE,warning=FALSE, fig.cap=""}
 totalwatsed_wbal%>%
             echarts4r::e_charts(variable)  %>%
             echarts4r::e_pie(
                 value,
-                radius = c("55%", "70%")
-            )%>%
-          echarts4r::e_tooltip()%>% e_theme("auritus")
+                radius = c("55%", "70%"))%>%
+          echarts4r::e_tooltip()%>% e_theme("auritus")%>%
+          echarts4r::e_legend(textStyle = list(fontSize = 14))
 ```
 
 
@@ -199,7 +208,15 @@ perc_flow %>%
       echarts4r::e_area(PercentBaseflow, name = "Baseflow (% relative to streamflow)") %>%
       echarts4r::e_area(PercentLateral, name = "Lateral Flow (% relative to streamflow)") %>%
       echarts4r::e_area(PercentRunoff, name = "Runoff (% relative to streamflow)") %>%
-      echarts4r::e_tooltip(trigger = "axis")%>% e_theme("auritus")
+      echarts4r::e_tooltip(trigger = "axis")%>%
+      echarts4r::e_theme("auritus")%>%
+      echarts4r::e_color(c("darkgrey", "red",  "blue"))%>%
+      echarts4r::e_axis_labels(
+    x = "Water Year",
+    y = "Percent relative to streamflow"
+  ) %>% echarts4r::e_y_axis(nameTextStyle = list(fontSize = 13))%>%
+  echarts4r::e_x_axis(nameTextStyle = list(fontSize = 13))%>%
+          echarts4r::e_legend(textStyle = list(fontSize = 14))
 ```
 
 ```{r, echo=FALSE, message=FALSE,warning=FALSE}
@@ -240,7 +257,9 @@ gp_runoff = runoff_cp_df %>%
   echarts4r::e_tooltip(trigger = "axis")%>%
   e_theme("sakura")%>%
   e_axis_labels(x="Area (%)",
-                y = paste(stringr::str_to_title(stringr::str_split(colnames(runoff_cp_df)[6],"_")[[1]][2]), "(%)", sep = " "))
+                y = paste(stringr::str_to_title(stringr::str_split(colnames(runoff_cp_df)[6],"_")[[1]][2]), "(%)", sep = " "))%>% echarts4r::e_y_axis(nameTextStyle = list(fontSize = 13))%>%
+  echarts4r::e_x_axis(nameTextStyle = list(fontSize = 13))%>%
+          echarts4r::e_legend(textStyle = list(fontSize = 14))
 
 
 gp_runoff
@@ -276,7 +295,7 @@ filter_slider("cumPercArea", "Filter map and table by contributing area (%)", sd
 
 ggplotly(ggplot() +
     geom_sf(data = sd_r, mapping = aes(fill = runoff_mm), show.legend = TRUE)  +
-    coord_sf()+ggthemes::theme_map()+scale_fill_viridis_c(option = "A",alpha = 0.9))
+    coord_sf()+labs(fill = "Runoff (mm)") + ggthemes::theme_map()+scale_fill_viridis_c(option = "A",alpha = 0.9))
 
 
 ```
@@ -346,7 +365,9 @@ gp_sed = sd_yd_cp_df %>%
   name=paste(stringr::str_split(colnames(sd_yd_cp_df)[6],"_")[[1]][2], stringr::str_split(colnames(sd_yd_cp_df)[6],"_")[[1]][3], sep = " "))%>%
                 echarts4r::e_tooltip(trigger = "axis")%>%e_theme("sakura")%>%
             e_axis_labels(x="Area (%)",
-                          y= paste(stringr::str_split(colnames(sd_yd_cp_df)[6],"_")[[1]][2], stringr::str_split(colnames(sd_yd_cp_df)[6],"_")[[1]][3], "(%)", sep = " "))
+                          y= paste(stringr::str_split(colnames(sd_yd_cp_df)[6],"_")[[1]][2], stringr::str_split(colnames(sd_yd_cp_df)[6],"_")[[1]][3], "(%)", sep = " "))%>% echarts4r::e_y_axis(nameTextStyle = list(fontSize = 13))%>%
+  echarts4r::e_x_axis(nameTextStyle = list(fontSize = 13))%>%
+          echarts4r::e_legend(textStyle = list(fontSize = 14))
 
 gp_sed
           
@@ -376,7 +397,7 @@ filter_slider("cumPercArea", "Filter map and table by contributing area (%)", sd
 
 ggplotly(ggplot() +
     geom_sf(data = sd, mapping = aes(fill = Sediment_Yield_kg), show.legend = TRUE)  +
-    coord_sf()+ggthemes::theme_map()+scale_fill_viridis_c(option = "A",alpha = 0.9))
+    coord_sf()+labs(fill = "Sediment Yield (kg)") +ggthemes::theme_map()+scale_fill_viridis_c(option = "A",alpha = 0.9))
 
 
 ```
@@ -455,7 +476,9 @@ gp_tp = tp_cp_df %>%
   e_axis_labels(
               x = "Area (%)",
               y = paste(stringr::str_split(colnames(tp_cp_df)[6],"_")[[1]][2], stringr::str_split(colnames(tp_cp_df)[6],"_")[[1]][3], "(%)", sep = " ")
-            )
+            )%>% echarts4r::e_y_axis(nameTextStyle = list(fontSize = 13))%>%
+  echarts4r::e_x_axis(nameTextStyle = list(fontSize = 13))%>%
+          echarts4r::e_legend(textStyle = list(fontSize = 14))
 
 
 gp_tp
@@ -487,8 +510,7 @@ filter_slider("cumPercArea", "Filter map and table by contributing area (%)", sd
 
 
 ggplotly(ggplot() +
-    geom_sf(data = sd_tp, mapping = aes(fill = Total_Phosphorus_kg), show.legend = TRUE)  +
-    coord_sf()+ggthemes::theme_map()+scale_fill_viridis_c(option = "A",alpha = 0.9))
+    geom_sf(data = sd_tp, mapping = aes(fill = Total_Phosphorus_kg), show.legend = TRUE)  +coord_sf()+labs(fill = "Total Phosphorus (kg)") +ggthemes::theme_map()+scale_fill_viridis_c(option = "A",alpha = 0.9))
 
 
 ```
@@ -540,19 +562,14 @@ daily_plt_precip = merged_daily_df %>%
   dplyr::select(dplyr::any_of(c("Date","precipitation_mm")))
 
 merged_daily_df_plt = merged_daily_df %>% dplyr::select(dplyr::any_of(c("Date", "Q_outlet_mm",
-                                                            "Sediment_tonnes_ebe",
-                                          "SRP_tonnes_ebe",
-                                          "PP_tonnes_ebe",
-                                          "TP_tonnes_ebe"))) %>%
+                                                            "Sediment_tonnes_ebe"))) %>%
     plyr::rename( c("Q_outlet_mm" ="Streamflow (mm)",
-                   "Sediment_tonnes_ebe"="Sediments (Mg)",
-                   "SRP_tonnes_ebe"="SRP (Mg)",
-                   "PP_tonnes_ebe" ="PP (Mg)" ,
-                   "TP_tonnes_ebe" ="TP (Mg)"),
+                   "Sediment_tonnes_ebe"="Sediments (Mg)"),
                   warn_missing = FALSE)%>% reshape2::melt(id.vars = "Date")
 
 ```
 
+#### Precipitaiton, Streamflow,  Sediment Yield timeseries
           
 ```{r, echo=FALSE, message=FALSE,warning=FALSE}
 PrecipAx_d <- list(
@@ -560,17 +577,40 @@ PrecipAx_d <- list(
        side = "right",
        title = "Precipitation (mm)",
        range = c(max(daily_plt_precip$precipitation_mm)*2.5,0),
-       showgrid=FALSE, automargin = TRUE, color = "#8C564B"
+       showgrid=FALSE, automargin = TRUE, color = "#7fc8f8"
    )
-fig = plot_ly(colors = "viridis") %>% 
+fig = plot_ly(colors = c("#a17c6b", "#ff6392")) %>% 
   plotly::add_trace(x = ~Date, y = ~value, color = ~variable, data = merged_daily_df_plt,
                                         type = "scatter", mode= "line")%>%
   plotly::add_trace(x = ~Date, y = ~precipitation_mm, data = daily_plt_precip,
                   type = "scatter", mode= "line", yaxis="y2",
-                  name="Precipitation (mm)") %>% 
+                  name="Precipitation (mm)",
+                  line=list(color='#5aa9e6')) %>% 
   layout(yaxis2=PrecipAx_d,legend = list(orientation = "h", x=0.05, y = 1.15,
                                          font = list( size = 16, color = "black")), yaxis = list(title = ""))
 fig
+
+```
+
+#### Phosphorus timeseries
+
+```{r, echo=FALSE, message=FALSE,warning=FALSE} 
+if(!file.exists(paste0("/geodata/weppcloud_runs/",params$proj_runid,"/wepp/runs/phosphorus.txt"))){
+
+  merged_daily_P_df_plt = merged_daily_df %>% dplyr::select(dplyr::any_of(c("Date", "SRP_tonnes_ebe",
+                                          "PP_tonnes_ebe",
+                                          "TP_tonnes_ebe"))) %>%
+    plyr::rename( c("SRP_tonnes_ebe"="SRP (Mg)",
+                   "PP_tonnes_ebe" ="PP (Mg)" ,
+                   "TP_tonnes_ebe" ="TP (Mg)"),
+                  warn_missing = FALSE)%>% reshape2::melt(id.vars = "Date")
+
+
+fig2 = plot_ly(colors = "viridis") %>% 
+  plotly::add_trace(x = ~Date, y = ~value, color = ~variable, data = merged_daily_P_df_plt,
+                                        type = "scatter", mode= "line")
+fig2
+}
 
 ```
 
