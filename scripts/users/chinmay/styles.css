@@ -76,13 +76,13 @@
    clear: left;
 }
 
-.baseflow {color:#8593A1;
+.baseflow {color:darkgrey;
 }
 
-.lateral {color:#B53A43;
+.lateral {color:red;
 }
 
-.runoff {color:#E2841B;
+.runoff {color:blue;
 }
 
 </style>
