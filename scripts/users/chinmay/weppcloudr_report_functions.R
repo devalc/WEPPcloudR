@@ -148,14 +148,16 @@ get_cli_summary <- function(runid){
   
   if (file.exists(fn)) {
     
-    linenumber = grep("AVERAGE ANNUAL basis",readLines(fn))[1] -1
-    getstring<- readLines(con = fn, n = 10, skip = linenumber)
+    linenumber = grep("AVERAGE ANNUAL basis",readLines(fn))[1]
+    getstring<- readLines(con = fn)
   }else{
     fn = paste0("https://wepp.cloud/weppcloud/runs/", runid,"/cfg/browse/wepp/output/loss_pw0.txt")
     linenumber = grep("AVERAGE ANNUAL basis",readLines(fn))[1]
     getstring<- readLines(con = fn)
-    return(head(tail(getstring, n = -(linenumber - 1)), n = 6))
+    
   }
+  
+  return(head(tail(getstring, n = -(linenumber - 1)), n = 6))
   
 }
 
