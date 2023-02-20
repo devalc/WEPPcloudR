@@ -130,6 +130,38 @@ return(num)
 
 ## --------------------------------------------------------------------------------------##
 
+# Function to extract numbers from a character vector
+extract_numbers <- function(strings) {
+  numbers <- as.numeric(regmatches(strings, regexpr("[0-9]+", strings)))
+  return(numbers)
+}
+
+get_cli_summary <- function(runid){
+  #
+  fn = paste0(
+    "/geodata/weppcloud_runs/",
+    runid,
+    "/wepp/output/",
+    "loss_pw0.txt"
+  )
+  
+  
+  if (file.exists(fn)) {
+    
+    linenumber = grep("AVERAGE ANNUAL basis",readLines(fn))[1] -1
+    getstring<- readLines(con = fn, n = 10, skip = linenumber)
+  }else{
+    fn = paste0("https://wepp.cloud/weppcloud/runs/", runid,"/cfg/browse/wepp/output/loss_pw0.txt")
+    linenumber = grep("AVERAGE ANNUAL basis",readLines(fn))[1]
+    getstring<- readLines(con = fn)
+    return(head(tail(getstring, n = -(linenumber - 1)), n = 6))
+  }
+  
+}
+
+
+
+## --------------------------------------------------------------------------------------##
  
 get_WY <- function(x, numeric=TRUE) {
   x <- as.POSIXlt(x)
@@ -982,41 +1014,4 @@ make_leaflet_map_multi = function(plot_df, plot_var, col_pal_type, unit = NULL){
 }
 
 ## --------------------------------------------------------------------------------------##
-map_multiplelayers_runoff <- function(df) {
-  
-  #number of groups
-  n <- n_distinct(df$Watershed_scenario)
-  #colorpal
-  pal1 <- colorNumeric("viridis", domain = df$runoff_mm)
-  
-  #base map
-  map <- leaflet() %>%
-    addProviderTiles(providers$CartoDB.Positron)
-  
-  k=unique(df$Watershed_scenario)
-  
-  for (i in k) {
-    
-    a= df %>% filter(Watershed_scenario == i)
-    map <- map %>%
-      addPolygons(
-        data= a,
-        fillColor = ~pal1(runoff_mm),
-        weight = 2,
-        opacity =1,
-        color = "white",
-        dashArray = "3",
-        fillOpacity = 1,
-        group = i,
-        popup = ~paste("WeppID:", df$wepp_id,
-                       "<br>",
-                       "Runoff (mm):", df$runoff_mm
-        ))
-  }
-  #create layer control
-  map %>%
-    addLayersControl(
-      overlayGroups = k,
-      options = layersControlOptions(collapsed = FALSE)) %>%
-    hideGroup(k[2:n])
-}
+
