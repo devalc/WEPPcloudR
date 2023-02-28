@@ -569,7 +569,7 @@ merged_daily_df_plt = merged_daily_df %>% dplyr::select(dplyr::any_of(c("Date", 
 
 ```
 
-#### Precipitaiton, Streamflow,  Sediment Yield timeseries
+#### Precipitation, Streamflow,  Sediment Yield timeseries
           
 ```{r, echo=FALSE, message=FALSE,warning=FALSE}
 PrecipAx_d <- list(
