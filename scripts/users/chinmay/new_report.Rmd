@@ -1,5 +1,5 @@
 ---
-title: "`r paste0('A report generated for ', params$proj_runid, ' run')`"
+title: "A report generated for <span style='color: #6a4c93;'>`r params$proj_runid`</span> run</span>"
 date: "`r Sys.Date()`"
 output: 
   cleanrmd::html_document_clean:
@@ -118,6 +118,9 @@ perc_flow = merged_WY %>%
 
 
 ```
+## About
+
+This report provides detailed graphical output and tabulated summaries of the WEPPcloud watershed run (<span style='color: #6a4c93;'>`r params$proj_runid`</span> run</span>) results. This information is easily downloadable for reports, presentations or other information needs.
 
 ### Land Cover & Soils 
 
@@ -146,7 +149,9 @@ leafsync::sync(landuse_map,
 cli_sum = get_cli_summary(params$proj_runid)
 ```
 
-During the simulation period between `r as.numeric(yr_min)` and `r as.numeric(yr_max)`, `r as.numeric(stringr::str_extract_all(cli_sum, "\\d+([.,]\\d+)?")[[1]][1])` storms produced `r round(as.numeric(stringr::str_extract_all(cli_sum, "\\d+([.,]\\d+)?")[[1]][2]))` mm of rainfall on an average annual basis. `r as.numeric(stringr::str_extract_all(cli_sum, "\\d+([.,]\\d+)?")[[3]][1])` runoff events produced `r round(as.numeric(stringr::str_extract_all(cli_sum, "\\d+([.,]\\d+)?")[[3]][2]))` mm of runoff passing through the watershed outlet on an average annual basis.
+During the simulation period between `r as.numeric(yr_min)` and `r as.numeric(yr_max)`, `r as.numeric(stringr::str_extract_all(cli_sum, "\\d+([.,]\\d+)?")[[1]][1])` storms produced `r round(as.numeric(stringr::str_extract_all(cli_sum, "\\d+([.,]\\d+)?")[[1]][2]))` mm of rainfall resulting in  `r round(as.numeric(stringr::str_extract_all(cli_sum, "\\d+([.,]\\d+)?")[[3]][2]))` mm of streamflow passing through the watershed outlet on an average annual basis.
+
+<!-- on an average annual basis. `r as.numeric(stringr::str_extract_all(cli_sum, "\\d+([.,]\\d+)?")[[3]][1])` runoff events produced `r round(as.numeric(stringr::str_extract_all(cli_sum, "\\d+([.,]\\d+)?")[[3]][2]))` mm of runoff passing through the watershed outlet on an average annual basis. -->
 
 
 
@@ -291,11 +296,13 @@ sd_r <- SharedData$new(sd_r)
 ```{r echo=FALSE}
 
 # # Create a filter input
-filter_slider("cumPercArea", "Filter map and table by contributing area (%)", sd_r, column=~cumPercArea, step=1, width=600)
-
+filter_slider("cumPercArea", "Filter map and table by watershed area(%) that generates most runoff. ", sd_r, column=~cumPercArea, step=1, width=600)
+```
+<span style='color: #8e9aaf;'>(Known bug: Legend might disappear on filtering, please reload the page to get the legend back.)</span>
+```{r echo=FALSE}
 ggplotly(ggplot() +
     geom_sf(data = sd_r, mapping = aes(fill = runoff_mm), show.legend = TRUE)  +
-    coord_sf()+labs(fill = "Runoff (mm)") + ggthemes::theme_map()+scale_fill_viridis_c(option = "A",alpha = 0.9))
+    coord_sf()+labs(fill = "Runoff (mm)") + ggthemes::theme_map()+scale_fill_viridis_c(option = "A",alpha = 0.9))%>%plotly::layout(legend = TRUE)
 
 
 ```
@@ -392,7 +399,11 @@ sd <- SharedData$new(sd)
 ```{r echo=FALSE}
 
 # # Create a filter input
-filter_slider("cumPercArea", "Filter map and table by contributing area (%)", sd, column=~cumPercArea, step=1, width=600)
+filter_slider("cumPercArea", "Filter map and table by watershed area(%) that generates most sediments.", sd, column=~cumPercArea, step=1, width=600)
+```
+
+<span style='color: #8e9aaf;'>(Known bug: Legend might disappear on filtering, please reload the page to get the legend back.)</span>
+```{r echo=FALSE}
 
 
 ggplotly(ggplot() +
@@ -506,8 +517,12 @@ sd_tp <- SharedData$new(sd_tp)
 
 ```{r, echo=FALSE, message=FALSE,warning=FALSE}
 # # Create a filter input
-filter_slider("cumPercArea", "Filter map and table by contributing area (%)", sd_tp, column=~cumPercArea, step=1, width=600)
+filter_slider("cumPercArea", "Filter map and table by watershed area(%) that generates most phosphorus.", sd_tp, column=~cumPercArea, step=1, width=600)
+```
 
+<span style='color: #8e9aaf;'>(Known bug: Legend might disappear on filtering, please reload the page to get the legend back.)</span>
+
+```{r, echo=FALSE, message=FALSE,warning=FALSE}
 
 ggplotly(ggplot() +
     geom_sf(data = sd_tp, mapping = aes(fill = Total_Phosphorus_kg), show.legend = TRUE)  +coord_sf()+labs(fill = "Total Phosphorus (kg)") +ggthemes::theme_map()+scale_fill_viridis_c(option = "A",alpha = 0.9))
