@@ -610,7 +610,7 @@ fig
 #### Phosphorus timeseries
 
 ```{r, echo=FALSE, message=FALSE,warning=FALSE} 
-if(!file.exists(paste0("/geodata/weppcloud_runs/",params$proj_runid,"/wepp/runs/phosphorus.txt"))){
+if(file.exists(paste0("/geodata/weppcloud_runs/",params$proj_runid,"/wepp/runs/phosphorus.txt"))){
 
   merged_daily_P_df_plt = merged_daily_df %>% dplyr::select(dplyr::any_of(c("Date", "SRP_tonnes_ebe",
                                           "PP_tonnes_ebe",
