@@ -239,157 +239,98 @@ process_chanwb <- function(runid, Wshed_Area_m2){
 
 ## --------------------------------------------------------------------------------------##
 
-read_subcatchments = function(runid){
-  
-  link = paste0("/geodata/weppcloud_runs/", runid, "/export/arcmap/subcatchments.json")
-  
-  phosporus_flag = paste0("/geodata/weppcloud_runs/",runid, "/wepp/runs/phosphorus.txt")
-  
-  ermit_texture_csv = paste0("/geodata/weppcloud_runs/", runid,"/export/", 
-                             paste0("ERMiT_input_", runid,".csv"))
+read_subcatchments = function(runid) {
+  link = paste0("/geodata/weppcloud_runs/", runid, "/export/arcmap/subcatchments.WGS.json")
+  link_utm = paste0("/geodata/weppcloud_runs/", runid, "/export/arcmap/subcatchments.json")
   
   
-  if(file.exists(link)){
+  ## location to parse from if running locally
+  link_l = paste0("https://wepp.cloud/weppcloud/runs/",runid, "/cfg/browse/export/arcmap/subcatchments.WGS.json")
+  link_utm_l = paste0("https://wepp.cloud/weppcloud/runs/",runid, "/cfg/browse/export/arcmap/subcatchments.json")
+  
+  
+  subcatchments <- NULL
+  if (file.exists(link)) {
+    subcatchments <- sf::st_read(link)
+    phosporus_flag = paste0("/geodata/weppcloud_runs/",runid, "/wepp/runs/phosphorus.txt")
+    ermit_texture_csv = paste0("/geodata/weppcloud_runs/", runid,"/export/", 
+                               paste0("ERMiT_input_", runid,".csv"))
+  } else if (file.exists(link_utm)) {
+    subcatchments <- sf::st_read(link_utm)
+    phosporus_flag = paste0("/geodata/weppcloud_runs/",runid, "/wepp/runs/phosphorus.txt")
+    ermit_texture_csv = paste0("/geodata/weppcloud_runs/", runid,"/export/", 
+                               paste0("ERMiT_input_", runid,".csv"))
+  } else if(file.exists(link_l)){
+    subcatchments <- sf::st_read(link_l)
+    phosporus_flag = paste0("https://wepp.cloud/weppcloud/runs/",runid, "/cfg/browse/wepp/runs/phosphorus.txt")
+    ermit_texture_csv = paste0("https://wepp.cloud/weppcloud/runs/", runid,"/cfg/browse/export/",paste0("ERMiT_input_", runid,".csv/?raw"))
+  }else{
+    subcatchments <- sf::st_read(link_utm_l)
+    phosporus_flag = paste0("https://wepp.cloud/weppcloud/runs/",runid, "/cfg/browse/wepp/runs/phosphorus.txt")
+    ermit_texture_csv = paste0("https://wepp.cloud/weppcloud/runs/", runid,"/cfg/browse/export/",paste0("ERMiT_input_", runid,".csv/?raw"))
+  }
+  
+  subcatchments <- st_transform(subcatchments, 4326)
+  
+  geom_sum <- subcatchments %>%
+    group_by(WeppID) %>%
+    summarize(geometry = st_union(geometry)) 
+  
+  geom_sum <- geom_sum %>%
+    left_join(subcatchments %>%
+                as.data.frame() %>%
+                select(-geometry) %>%
+                distinct(), by = "WeppID")
+  
+  geom_sum <- geom_sum %>%
+    separate(soil, c("x1", "x2", "x3", "x4"), sep = ",", fill = "right") %>%
+    mutate(Soil = ifelse(grepl("slopes", x2), x1, paste(x1, x2, sep = ",")),
+           Gradient = ifelse(grepl("slopes", x2), x2,
+                             ifelse(grepl("slopes", x3), x3, "Refer to the soil file for details")),
+           Texture = ifelse(grepl("slopes", x2), x3, x4),
+           Texture = replace_na(Texture, "Refer to the soil file for details"),
+           Gradient = replace_na(Gradient, "Refer to the soil file for details"),
+           Soil = str_remove(Soil, ",NA")) %>%
+    select(-c(wepp_id, x1, x2, x3, x4)) %>%
+    clean_names() %>%
+    mutate(soil = str_replace(soil, "-", " ")) %>%
+    mutate(across(contains('_kg_ha'), list(kg = ~ .*area_ha)))
+  
+  if (file.exists(phosporus_flag)) {
     
-    subcatchments <- sf::st_read(link,quiet = TRUE)
     
-    subcatchments = subcatchments%>%sf::st_transform(4326)
-    
-    geom_sum = subcatchments%>%
-      dplyr::group_by(WeppID)%>%
-      dplyr::summarize(geometry = sf::st_union(geometry))
-    
-    subcatchments = subcatchments %>% as.data.frame() %>% 
-      dplyr::select(-geometry)%>% dplyr::distinct()
-    
-    geom_sum = dplyr::left_join(geom_sum, subcatchments, by =c("WeppID"))
-    
-    geom_sum = geom_sum %>% tidyr::separate(soil,
-                                            c("x1", "x2", "x3", "x4"),
-                                            sep = ",",
-                                            fill="right" )%>% 
-      dplyr::mutate(Soil= case_when(grepl("slopes", x2)==TRUE~x1,
-                                    grepl("slopes", x2)==FALSE~paste(x1,x2,sep=",")),
-                    Gradient = case_when((grepl("slopes", x2)==TRUE)~x2,
-                                         (grepl("slopes", x2)==FALSE & grepl("slopes", x3)==TRUE)~x3),
-                    Texture = case_when((grepl("slopes", x2)==TRUE)~x3,
-                                        (grepl("slopes", x2)==FALSE)~x4),
-                    Texture = replace_na(Texture, "Refer to the soil file for details"),
-                    Gradient = replace_na(Gradient, "Refer to the soil file for details"),
-                    Soil = str_remove(Soil, ",NA")) %>%
-      dplyr::select(-c(wepp_id,x1,x2,x3,x4))%>%
-      janitor::clean_names()%>%
-      dplyr::mutate(soil = stringr::str_replace(soil,pattern = "-"," "))%>% 
-      dplyr::mutate(dplyr::across(dplyr::contains('_kg_ha'),
-                                  .fns = list(kg = ~.*area_ha)))
-    
-    if (file.exists(phosporus_flag)) {
-
-
-      geom_sum = geom_sum %>% dplyr::rename("Particulate_Phosphorus_kg" ="pp_kg_ha_kg",
-                                            "Soluble_Reactive_Phosohorus_kg"= "srp_kg_ha_kg",
-                                            "Sediment_Deposition_kg" = "sd_dp_kg_ha_kg",
-                                            "Sediment_Yield_kg"= "sd_yd_kg_ha_kg",
-                                            "Soil_Loss_kg" = "so_ls_kg_ha_kg",
-                                            "Total_Phosphorus_kg" = "tp_kg_ha_kg")
-      
-    }else{
-      geom_sum = geom_sum %>% dplyr::rename("Sediment_Deposition_kg" = "sd_dp_kg_ha_kg",
-                                            "Sediment_Yield_kg"= "sd_yd_kg_ha_kg",
-                                            "Soil_Loss_kg" = "so_ls_kg_ha_kg")
-    }
-    
-    if (file.exists(ermit_texture_csv)) {
-      
-      ermit_texture = data.table::fread(ermit_texture_csv, sep = ",")
-      
-      ermit_texture = ermit_texture %>%
-        dplyr::select(HS_ID,SOIL_TYPE)%>%
-        dplyr::rename("Texture" = "SOIL_TYPE",
-                      "wepp_id" = "HS_ID")
-      
-      geom_sum = dplyr::left_join(geom_sum, ermit_texture, by ="wepp_id")%>% 
-        dplyr::rename("Texture_string" = "Texture.x",
-                      "Texture" = "Texture.y")
-      
-    }else{
-      geom_sum = geom_sum 
-    }
+    geom_sum = geom_sum %>% dplyr::rename("Particulate_Phosphorus_kg" ="pp_kg_ha_kg",
+                                          "Soluble_Reactive_Phosohorus_kg"= "srp_kg_ha_kg",
+                                          "Sediment_Deposition_kg" = "sd_dp_kg_ha_kg",
+                                          "Sediment_Yield_kg"= "sd_yd_kg_ha_kg",
+                                          "Soil_Loss_kg" = "so_ls_kg_ha_kg",
+                                          "Total_Phosphorus_kg" = "tp_kg_ha_kg")
     
   }else{
-    link <- paste0("https://wepp.cloud/weppcloud/runs/",runid, "/cfg/browse/export/arcmap/subcatchments.json")
+    geom_sum = geom_sum %>% dplyr::rename("Sediment_Deposition_kg" = "sd_dp_kg_ha_kg",
+                                          "Sediment_Yield_kg"= "sd_yd_kg_ha_kg",
+                                          "Soil_Loss_kg" = "so_ls_kg_ha_kg")
+  }
+  
+  if (file.exists(ermit_texture_csv)) {
     
-    phosporus_flag = paste0("https://wepp.cloud/weppcloud/runs/",runid, "/cfg/browse/wepp/runs/phosphorus.txt")
+    ermit_texture = data.table::fread(ermit_texture_csv, sep = ",")
     
-    ermit_texture_csv = paste0("https://wepp.cloud/weppcloud/runs/", runid,"/cfg/browse/export/",paste0("ERMiT_input_", runid,".csv/?raw"))
+    ermit_texture = ermit_texture %>%
+      dplyr::select(HS_ID,SOIL_TYPE)%>%
+      dplyr::rename("Texture" = "SOIL_TYPE",
+                    "wepp_id" = "HS_ID")
     
-    subcatchments <- sf::st_read(link,quiet = TRUE)
+    geom_sum = dplyr::left_join(geom_sum, ermit_texture, by ="wepp_id")%>% 
+      dplyr::rename("Texture_string" = "Texture.x",
+                    "Texture" = "Texture.y")
     
-    subcatchments = subcatchments%>%sf::st_transform(4326)
-    
-    geom_sum = subcatchments%>%
-      dplyr::group_by(WeppID)%>%
-      dplyr::summarize(geometry = sf::st_union(geometry))
-    
-    subcatchments = subcatchments %>% as.data.frame() %>% 
-      dplyr::select(-geometry)%>% dplyr::distinct()
-    
-    geom_sum = dplyr::left_join(geom_sum, subcatchments, by =c("WeppID"))
-    
-    geom_sum = geom_sum %>% tidyr::separate(soil,
-                                            c("x1", "x2", "x3", "x4"),
-                                            sep = ",",
-                                            fill="right" )%>% 
-      dplyr::mutate(Soil= case_when(grepl("slopes", x2)==TRUE~x1,
-                                    grepl("slopes", x2)==FALSE~paste(x1,x2,sep=",")),
-                    Gradient = case_when((grepl("slopes", x2)==TRUE)~x2,
-                                         (grepl("slopes", x2)==FALSE & grepl("slopes", x3)==TRUE)~x3),
-                    Texture = case_when((grepl("slopes", x2)==TRUE)~x3,
-                                        (grepl("slopes", x2)==FALSE)~x4),
-                    Texture = replace_na(Texture, "Refer to the soil file for details"),
-                    Gradient = replace_na(Gradient, "Refer to the soil file for details"),
-                    Soil = str_remove(Soil, ",NA")) %>%
-      dplyr::select(-c(wepp_id,x1,x2,x3,x4))%>%
-      janitor::clean_names()%>%
-      dplyr::mutate(soil = stringr::str_replace(soil,pattern = "-"," "))%>% 
-      dplyr::mutate(dplyr::across(dplyr::contains('_kg_ha'),
-                                  .fns = list(kg = ~.*area_ha)))
-    
-    if (!file.exists(phosporus_flag)) {
-      
-      geom_sum = geom_sum %>% dplyr::rename("Particulate_Phosphorus_kg" ="pp_kg_ha_kg",
-                                            "Soluble_Reactive_Phosohorus_kg"= "srp_kg_ha_kg",
-                                            "Sediment_Deposition_kg" = "sd_dp_kg_ha_kg",
-                                            "Sediment_Yield_kg"= "sd_yd_kg_ha_kg",
-                                            "Soil_Loss_kg" = "so_ls_kg_ha_kg",
-                                            "Total_Phosphorus_kg" = "tp_kg_ha_kg")
-      
-    }else{
-      geom_sum = geom_sum %>% dplyr::rename("Sediment_Deposition_kg" = "sd_dp_kg_ha_kg",
-                                            "Sediment_Yield_kg"= "sd_yd_kg_ha_kg",
-                                            "Soil_Loss_kg" = "so_ls_kg_ha_kg")
-    }
-    
-    if (file.exists(ermit_texture_csv)) {
-      
-      ermit_texture = data.table::fread(ermit_texture_csv ,sep = ",")
-      
-      ermit_texture = ermit_texture %>%
-        dplyr::select(HS_ID,SOIL_TYPE)%>%
-        dplyr::rename("Texture" = "SOIL_TYPE",
-                      "wepp_id" = "HS_ID")
-      
-      geom_sum = dplyr::left_join(geom_sum, ermit_texture, by ="wepp_id")%>% 
-        dplyr::rename("Texture_string" = "Texture.x",
-                      "Texture" = "Texture.y")
-      
-    }else{
-      geom_sum = geom_sum 
-    }
-    
+  }else{
+    geom_sum = geom_sum 
   }
   
   return(geom_sum)
+  
 }
 
 ## --------------------------------------------------------------------------------------##
