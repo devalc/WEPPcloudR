@@ -60,7 +60,7 @@ gradient_dt = summarize_subcatch_by_var(subcatchments, "gradient")
 totalwatseddf <- process_totalwatsed(params$proj_runid)
 
 totalwatsed_wy_mean_df = totalwatseddf %>%
-          dplyr::select(-julian,-year,-Date,-mo,-da) %>%
+          dplyr::select(-dplyr::any_of(c("julian","year","Date","mo","da", "month", "day"))) %>%
           dplyr::group_by(WY) %>%
           dplyr::summarise_all(mean)
 

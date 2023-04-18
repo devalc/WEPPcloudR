@@ -702,18 +702,34 @@ process_ebe <- function(runid, yr_start, yr_end){
 process_totalwatsed <- function(runid){
   
   totalwatsed_fn = paste0("/geodata/weppcloud_runs/", runid, "/export/totalwatsed.csv")
+  totalwatsed2_fn = paste0("/geodata/weppcloud_runs/", runid, "/export/totalwatsed2.csv")
+  
+  totalwatsed_fn_l = paste0("https://wepp.cloud/weppcloud/runs/", runid, "/cfg/resources/wepp/totalwatsed.csv")
+  totalwatsed2_fn_l = paste0("https://wepp.cloud/weppcloud/runs/", runid, "/cfg/resources/wepp/totalwatsed2.csv")
   
   if (file.exists(totalwatsed_fn)) {
     totalwatseddf <- data.table::fread(totalwatsed_fn) %>% 
       janitor::clean_names()%>%
       dplyr::rename("WY" = "water_year")%>%
       dplyr::mutate(Date = lubridate::make_date(year,mo,da))
-  } else {
-    totalwatseddf <- data.table::fread(paste0("https://wepp.cloud/weppcloud/runs/", runid, "/cfg/resources/wepp/totalwatsed.csv")) %>% 
+  } else 
+    if(file.exists(totalwatsed2_fn)){
+      totalwatseddf <- data.table::fread(totalwatsed2_fn) %>% 
+        janitor::clean_names()%>%
+        dplyr::rename("WY" = "water_year")%>%
+        dplyr::mutate(Date = lubridate::make_date(year,month,day))
+    }else
+      if(file.exists(totalwatsed_fn_l)){
+    totalwatseddf <- data.table::fread(totalwatsed_fn_l) %>% 
       janitor::clean_names()%>%
       dplyr::rename("WY" = "water_year")%>%
       dplyr::mutate(Date = lubridate::make_date(year,mo,da))
-  }
+      }else{
+        totalwatseddf <- data.table::fread(totalwatsed2_fn_l) %>% 
+          janitor::clean_names()%>%
+          dplyr::rename("WY" = "water_year") %>%
+          dplyr::mutate(Date = lubridate::make_date(year,month,day))
+      }
   return(totalwatseddf)
   
 }
@@ -869,24 +885,25 @@ totwatsed_to_wbal_map_dfs = function(daily_totwatsed_df){
  
 merge_daily_Vars <- function(totalwatsed_df, chanwb_df, ebe_df){
   daily<- dplyr::left_join(as.data.frame(totalwatsed_df), as.data.frame(chanwb_df), by = c("Date", "WY")) %>%
-    dplyr::left_join(as.data.frame(ebe_df),  by = c("Date", "WY")) %>%
-    dplyr::mutate_at(c("area_m_2",	"precip_vol_m_3",	"rain_melt_vol_m_3",	"transpiration_vol_m_3",
-                       "evaporation_vol_m_3",	"percolation_vol_m_3",	"runoff_vol_m_3",	"lateral_flow_vol_m_3",
-                       "storage_vol_m_3",	"sed_det_kg",	"sed_dep_kg",	"sed_del_kg",
-                       "class_1",	"class_2",	"class_3",	"class_4",	"class_5",
-                       "area_ha",	"cumulative_sed_del_tonnes",	"sed_del_density_tonne_ha",
-                       "precipitation_mm",	"rain_melt_mm",	"transpiration_mm",	"evaporation_mm",	"et_mm",
-                       "percolation_mm",	"runoff_mm",	"lateral_flow_mm",	"storage_mm",
-                       "reservoir_volume_mm",	"baseflow_mm",	"aquifer_losses_mm",
-                       "streamflow_mm",	"swe_mm",	"sed_del_tonne",	"p_load_mg",
-                       "p_runoff_mg",	"p_lateral_mg",	"p_baseflow_mg",	"total_p_kg",
-                       "particulate_p_kg",	"soluble_reactive_p_kg",	"p_total_kg_ha",	"particulate_p_kg_ha",
-                       "soluble_reactive_p_kg_ha",	"Elmt_ID_chan",	"Chan_ID_chan",	"Inflow_chan",	"Outflow_chan",
-                       "Storage_chan",	"Baseflow_chan",	"Loss_chan",	"Balance_chan",
-                       "Q_outlet_mm",	"Day_ebe",	"P_ebe",	"Runoff_ebe",	"peak_ebe",
-                       "Sediment_ebe",	"SRP_ebe",	"PP_ebe",	"TP_ebe",
-                       "Sediment_tonnes_ebe",	"SRP_tonnes_ebe",	"PP_tonnes_ebe",
-                       "TP_tonnes_ebe"),as.numeric)
+    dplyr::left_join(as.data.frame(ebe_df),  by = c("Date", "WY")) 
+  # %>%
+  #   dplyr::mutate_at(c("area_m_2",	"precip_vol_m_3",	"rain_melt_vol_m_3",	"transpiration_vol_m_3",
+  #                      "evaporation_vol_m_3",	"percolation_vol_m_3",	"runoff_vol_m_3",	"lateral_flow_vol_m_3",
+  #                      "storage_vol_m_3",	"sed_det_kg",	"sed_dep_kg",	"sed_del_kg",
+  #                      "class_1",	"class_2",	"class_3",	"class_4",	"class_5",
+  #                      "area_ha",	"cumulative_sed_del_tonnes",	"sed_del_density_tonne_ha",
+  #                      "precipitation_mm",	"rain_melt_mm",	"transpiration_mm",	"evaporation_mm",	"et_mm",
+  #                      "percolation_mm",	"runoff_mm",	"lateral_flow_mm",	"storage_mm",
+  #                      "reservoir_volume_mm",	"baseflow_mm",	"aquifer_losses_mm",
+  #                      "streamflow_mm",	"swe_mm",	"sed_del_tonne",	"p_load_mg",
+  #                      "p_runoff_mg",	"p_lateral_mg",	"p_baseflow_mg",	"total_p_kg",
+  #                      "particulate_p_kg",	"soluble_reactive_p_kg",	"p_total_kg_ha",	"particulate_p_kg_ha",
+  #                      "soluble_reactive_p_kg_ha",	"Elmt_ID_chan",	"Chan_ID_chan",	"Inflow_chan",	"Outflow_chan",
+  #                      "Storage_chan",	"Baseflow_chan",	"Loss_chan",	"Balance_chan",
+  #                      "Q_outlet_mm",	"Day_ebe",	"P_ebe",	"Runoff_ebe",	"peak_ebe",
+  #                      "Sediment_ebe",	"SRP_ebe",	"PP_ebe",	"TP_ebe",
+  #                      "Sediment_tonnes_ebe",	"SRP_tonnes_ebe",	"PP_tonnes_ebe",
+  #                      "TP_tonnes_ebe"),as.numeric)
   return(daily)
 } 
 
