@@ -251,21 +251,21 @@ read_subcatchments = function(runid) {
   
   subcatchments <- NULL
   if (file.exists(link)) {
-    subcatchments <- sf::st_read(link)
+    subcatchments <- sf::st_read(link,quiet = TRUE)
     phosporus_flag = paste0("/geodata/weppcloud_runs/",runid, "/wepp/runs/phosphorus.txt")
     ermit_texture_csv = paste0("/geodata/weppcloud_runs/", runid,"/export/", 
                                paste0("ERMiT_input_", runid,".csv"))
   } else if (file.exists(link_utm)) {
-    subcatchments <- sf::st_read(link_utm)
+    subcatchments <- sf::st_read(link_utm,quiet = TRUE)
     phosporus_flag = paste0("/geodata/weppcloud_runs/",runid, "/wepp/runs/phosphorus.txt")
     ermit_texture_csv = paste0("/geodata/weppcloud_runs/", runid,"/export/", 
                                paste0("ERMiT_input_", runid,".csv"))
   } else if(file.exists(link_l)){
-    subcatchments <- sf::st_read(link_l)
+    subcatchments <- sf::st_read(link_l,quiet = TRUE)
     phosporus_flag = paste0("https://wepp.cloud/weppcloud/runs/",runid, "/cfg/browse/wepp/runs/phosphorus.txt")
     ermit_texture_csv = paste0("https://wepp.cloud/weppcloud/runs/", runid,"/cfg/browse/export/",paste0("ERMiT_input_", runid,".csv/?raw"))
   }else{
-    subcatchments <- sf::st_read(link_utm_l)
+    subcatchments <- sf::st_read(link_utm_l,quiet = TRUE)
     phosporus_flag = paste0("https://wepp.cloud/weppcloud/runs/",runid, "/cfg/browse/wepp/runs/phosphorus.txt")
     ermit_texture_csv = paste0("https://wepp.cloud/weppcloud/runs/", runid,"/cfg/browse/export/",paste0("ERMiT_input_", runid,".csv/?raw"))
   }
