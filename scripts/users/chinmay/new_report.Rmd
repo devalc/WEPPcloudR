@@ -446,7 +446,7 @@ DT::datatable(sd,
 </div>
 
 
-`r if(!file.exists(paste0("/geodata/weppcloud_runs/",params$proj_runid,"/wepp/runs/phosphorus.txt"))){"<!--"}`
+<!-- `r if(!file.exists(paste0("/geodata/weppcloud_runs/",params$proj_runid,"/wepp/runs/phosphorus.txt"))){"<!--"}` -->
 
 
 ```{r, echo=FALSE, message=FALSE,warning=FALSE}
@@ -564,7 +564,7 @@ DT::datatable(sd_tp,
 </div>
 </div>
 
-`r if(!file.exists(paste0("/geodata/weppcloud_runs/",params$proj_runid,"/wepp/runs/phosphorus.txt"))){"-->"}`
+
 
 ### Timeseries plots
             
