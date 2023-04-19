@@ -295,38 +295,38 @@ read_subcatchments = function(runid) {
     clean_names() %>%
     mutate(soil = str_replace(soil, "-", " ")) %>%
     mutate(across(contains('_kg_ha'), list(kg = ~ .*area_ha)))
-  
-  if (file.exists(phosporus_flag)) {
-    
-    
+  # print(phosporus_flag)
+  if (!file.exists(phosporus_flag)) {
+
+
     geom_sum = geom_sum %>% dplyr::rename("Particulate_Phosphorus_kg" ="pp_kg_ha_kg",
                                           "Soluble_Reactive_Phosohorus_kg"= "srp_kg_ha_kg",
                                           "Sediment_Deposition_kg" = "sd_dp_kg_ha_kg",
                                           "Sediment_Yield_kg"= "sd_yd_kg_ha_kg",
                                           "Soil_Loss_kg" = "so_ls_kg_ha_kg",
                                           "Total_Phosphorus_kg" = "tp_kg_ha_kg")
-    
+
   }else{
     geom_sum = geom_sum %>% dplyr::rename("Sediment_Deposition_kg" = "sd_dp_kg_ha_kg",
                                           "Sediment_Yield_kg"= "sd_yd_kg_ha_kg",
                                           "Soil_Loss_kg" = "so_ls_kg_ha_kg")
   }
-  
+
   if (file.exists(ermit_texture_csv)) {
-    
+
     ermit_texture = data.table::fread(ermit_texture_csv, sep = ",")
-    
+
     ermit_texture = ermit_texture %>%
       dplyr::select(HS_ID,SOIL_TYPE)%>%
       dplyr::rename("Texture" = "SOIL_TYPE",
                     "wepp_id" = "HS_ID")
-    
-    geom_sum = dplyr::left_join(geom_sum, ermit_texture, by ="wepp_id")%>% 
+
+    geom_sum = dplyr::left_join(geom_sum, ermit_texture, by ="wepp_id")%>%
       dplyr::rename("Texture_string" = "Texture.x",
                     "Texture" = "Texture.y")
-    
+
   }else{
-    geom_sum = geom_sum 
+    geom_sum = geom_sum
   }
   
   return(geom_sum)
@@ -455,7 +455,7 @@ read_subcatchments_map = function(runid){
       dplyr::mutate(dplyr::across(dplyr::contains('_kg_ha'),
                                   .fns = list(kg = ~.*area_ha)))
     
-    if (!file.exists(phosporus_flag)) {
+    if (file.exists(phosporus_flag)) {
       
       geom_sum = geom_sum %>% dplyr::rename("Particulate_Phosphorus_kg" ="pp_kg_ha_kg",
                                             "Soluble_Reactive_Phosohorus_kg"= "srp_kg_ha_kg",
