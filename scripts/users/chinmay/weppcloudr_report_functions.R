@@ -588,9 +588,14 @@ process_ebe <- function(runid, yr_start, yr_end){
     
     ### set names of the dataframe
     
+    if (ncol(ebe) == 11){
+      colnames(ebe) <- c("Day_ebe", "Month_ebe", "Year_ebe",
+                         "P_ebe", "Runoff_ebe", "peak_ebe", "Sediment_ebe",
+                         "SRP_ebe", "PP_ebe", "TP_ebe", "col11")
+    }else{
     colnames(ebe) <- c("Day_ebe", "Month_ebe", "Year_ebe",
                        "P_ebe", "Runoff_ebe", "peak_ebe", "Sediment_ebe",
-                       "SRP_ebe", "PP_ebe", "TP_ebe")
+                       "SRP_ebe", "PP_ebe", "TP_ebe")}
     
     dt_head_d = as.character(head(ebe,1)[[1]])
     dt_head_m = as.character(head(ebe,1)[[2]])
@@ -614,9 +619,14 @@ process_ebe <- function(runid, yr_start, yr_end){
     
     ### set names of the dataframe
     
-    colnames(ebe) <- c("Day_ebe", "Month_ebe", "Year_ebe",
-                       "P_ebe", "Runoff_ebe", "peak_ebe", "Sediment_ebe",
-                       "SRP_ebe", "PP_ebe", "TP_ebe")
+    if (ncol(ebe) == 11){
+      colnames(ebe) <- c("Day_ebe", "Month_ebe", "Year_ebe",
+                         "P_ebe", "Runoff_ebe", "peak_ebe", "Sediment_ebe",
+                         "SRP_ebe", "PP_ebe", "TP_ebe", "col11")
+    }else{
+      colnames(ebe) <- c("Day_ebe", "Month_ebe", "Year_ebe",
+                         "P_ebe", "Runoff_ebe", "peak_ebe", "Sediment_ebe",
+                         "SRP_ebe", "PP_ebe", "TP_ebe")}
     
     dt_head_d = as.character(head(ebe,1)[[1]])
     dt_head_m = as.character(head(ebe,1)[[2]])
