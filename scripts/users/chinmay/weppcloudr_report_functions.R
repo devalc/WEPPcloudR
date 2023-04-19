@@ -296,7 +296,7 @@ read_subcatchments = function(runid) {
     mutate(soil = str_replace(soil, "-", " ")) %>%
     mutate(across(contains('_kg_ha'), list(kg = ~ .*area_ha)))
   # print(phosporus_flag)
-  if (!file.exists(phosporus_flag)) {
+  if (file.exists(phosporus_flag)) {
 
 
     geom_sum = geom_sum %>% dplyr::rename("Particulate_Phosphorus_kg" ="pp_kg_ha_kg",
