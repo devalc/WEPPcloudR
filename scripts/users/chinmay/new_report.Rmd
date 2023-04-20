@@ -446,38 +446,42 @@ DT::datatable(sd,
 </div>
 
 
-<!-- `r if(!file.exists(paste0("/geodata/weppcloud_runs/",params$proj_runid,"/wepp/runs/phosphorus.txt"))){"<!--"}` -->
+```{r echo=FALSE}
+file_path <- paste0("/geodata/weppcloud_runs/", params$proj_runid, "/wepp/runs/phosphorus.txt")
+has_phosphorus <- file.exists(file_path)
+if(has_phosphorus) {
+"<!--"
 
-
-```{r, echo=FALSE, message=FALSE,warning=FALSE}
 tp_cp_df = gen_cumulative_plt_df(subcatchments, Total_Phosphorus_kg)
+}
 ```
 
 ### Total Phosphorus
+
 
 <div style="clear: both;"></div>
 <div id="wrapper">
             
 <div class="column-left">
 
-`r if(sum(tp_cp_df$Total_Phosphorus_kg)==0) {"<!--"}`
-            
-            
-<span class='bigger'>`r round(tail(df_head_percent(as.data.frame(tp_cp_df), 30),1)[,6])`% </span> <span class='big_txt'> `r stringr::str_split(colnames(tp_cp_df)[6],"_")[[1]][2]` `r stringr::str_split(colnames(tp_cp_df)[6],"_")[[1]][3]` is contributed by
-            `r round(tail(df_head_percent(as.data.frame(tp_cp_df), 30),1)[,5])`% watershed area. </span>
-
-`r if(sum(tp_cp_df$Total_Phosphorus_kg)==0) {"-->"}`
-
-`r if(sum(tp_cp_df$Total_Phosphorus_kg)==0) {"<span class='big_txt'>No phosphorus was generated during the entire simulation.</span>"}`
-            
-</div>
-
-<div class="column-center"> </div>
+```{r echo=FALSE, eval=has_phosphorus}
+    if(sum(tp_cp_df$Total_Phosphorus_kg)==0) {"<!--"}
+           
+"<span class='bigger'>" round(tail(df_head_percent(as.data.frame(tp_cp_df), 30),1)[,6]) " % </span> <span class='big_txt'>"  stringr::str_split(colnames(tp_cp_df)[6],"_")[[1]][2]  stringr::str_split(colnames(tp_cp_df)[6],"_")[[1]][3]
+" is contributed by" round(tail(df_head_percent(as.data.frame(tp_cp_df), 30),1)[,5]) "% watershed area. </span>"
 
 
-<div class="column-right">
+if(sum(tp_cp_df$Total_Phosphorus_kg)==0) {"-->"}
 
-```{r, echo=FALSE, message=FALSE,warning=FALSE}
+if(sum(tp_cp_df$Total_Phosphorus_kg)==0) {"<span class='big_txt'>No phosphorus was generated during the entire simulation.</span>"}
+
+"</div>"
+
+"<div class='column-center'> </div>"
+
+
+"<div class='column-right'>"
+
 
 gp_tp = tp_cp_df %>%
   echarts4r::e_charts(x = cumPercArea) %>%
@@ -491,50 +495,41 @@ gp_tp = tp_cp_df %>%
   echarts4r::e_x_axis(nameTextStyle = list(fontSize = 13))%>%
           echarts4r::e_legend(textStyle = list(fontSize = 14))
 
-
 gp_tp
           
-``` 
-</div>
+"</div>"
 
 <!-- ######################### TP Plot and Table ################################# -->
 
-<div style="clear: both;"></div>
+"<div style='clear: both;></div>"
 
-```{r, echo=FALSE, message=FALSE,warning=FALSE}
 # Wrap data frame in SharedData
 sd_tp= tp_cp_df %>% sf::st_as_sf() %>% sf::st_cast()
 sd_tp <- SharedData$new(sd_tp)
-```
 
-<div id="wrapper-two">
+"<div id='wrapper-two'>"
 
-<div id="map-canvas">
+"<div id='map-canvas'>"
 
 <!-- ######################### TP Plot and Table ################################# -->
 
-<div style="clear: both;"></div>
+"<div style='clear: both;'></div>"
 
-```{r, echo=FALSE, message=FALSE,warning=FALSE}
 # # Create a filter input
 filter_slider("cumPercArea", "Filter map and table by watershed area(%) that generates most phosphorus.", sd_tp, column=~cumPercArea, step=1, width=600)
-```
 
-<span style='color: #8e9aaf;'>(Known bug: Legend might disappear on filtering, please reload the page to get the legend back.)</span>
+"<span style='color: #8e9aaf;'>(Known bug: Legend might disappear on filtering, please reload the page to get the legend back.)</span>"
 
-```{r, echo=FALSE, message=FALSE,warning=FALSE}
 
 ggplotly(ggplot() +
     geom_sf(data = sd_tp, mapping = aes(fill = Total_Phosphorus_kg), show.legend = TRUE)  +coord_sf()+labs(fill = "Total Phosphorus (kg)") +ggthemes::theme_map()+scale_fill_viridis_c(option = "A",alpha = 0.9))
 
 
-```
 
 
-</div>
+"</div>"
 
-<div id="tab-canvas">
-```{r echo=FALSE}
+"<div id='tab-canvas'>"
 
 DT::datatable(sd_tp,
               class = "display",
