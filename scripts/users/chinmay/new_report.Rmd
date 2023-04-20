@@ -27,7 +27,7 @@ library(cleanrmd, quietly = TRUE)
 library(plotly, quietly = TRUE)
 library(furrr, quietly = TRUE)
 library(janitor, quietly = TRUE)
-library(cleanrmd, quietly = TRUE)
+library(htmltools, quietly = TRUE)
 library(echarts4r, quietly = TRUE)
 library(DT, quietly = TRUE)
 library(leaflet, quietly = TRUE)
@@ -465,71 +465,77 @@ tp_cp_df = gen_cumulative_plt_df(subcatchments, Total_Phosphorus_kg)
 <div class="column-left">
 
 ```{r echo=FALSE, eval=has_phosphorus}
-    if(sum(tp_cp_df$Total_Phosphorus_kg)==0) {"<!--"}
-           
-"<span class='bigger'>" round(tail(df_head_percent(as.data.frame(tp_cp_df), 30),1)[,6]) " % </span> <span class='big_txt'>"  stringr::str_split(colnames(tp_cp_df)[6],"_")[[1]][2]  stringr::str_split(colnames(tp_cp_df)[6],"_")[[1]][3]
-" is contributed by" round(tail(df_head_percent(as.data.frame(tp_cp_df), 30),1)[,5]) "% watershed area. </span>"
+
+if(sum(tp_cp_df$Total_Phosphorus_kg)==0) {
+  htmltools::HTML("<span class='big_txt'>No phosphorus was generated during the entire simulation.</span>")
+} else {
+  htmltools::HTML(paste("<span class='bigger'>",
+        round(tail(df_head_percent(as.data.frame(tp_cp_df), 30),1)[,6]), " % </span> <span class='big_txt'>",
+        stringr::str_split(colnames(tp_cp_df)[6],"_")[[1]][2], stringr::str_split(colnames(tp_cp_df)[6],"_")[[1]][3],
+        " is contributed by", round(tail(df_head_percent(as.data.frame(tp_cp_df), 30),1)[,5]), "% watershed area. </span>"))
+}
+
+```
+</div>
+
+<div class="column-center"> </div>
 
 
-if(sum(tp_cp_df$Total_Phosphorus_kg)==0) {"-->"}
+<div class="column-right">
 
-if(sum(tp_cp_df$Total_Phosphorus_kg)==0) {"<span class='big_txt'>No phosphorus was generated during the entire simulation.</span>"}
-
-"</div>"
-
-"<div class='column-center'> </div>"
-
-
-"<div class='column-right'>"
-
+```{r echo=FALSE, eval=has_phosphorus}
 
 gp_tp = tp_cp_df %>%
   echarts4r::e_charts(x = cumPercArea) %>%
   echarts4r::e_area(cum_Total_Phosphorus_kg,
-  name =paste(stringr::str_split(colnames(tp_cp_df)[6],"_")[[1]][2], stringr::str_split(colnames(tp_cp_df)[6],"_")[[1]][3], sep = " "))%>%
-  echarts4r::e_tooltip(trigger = "axis")%>%e_theme("sakura")%>%
-  e_axis_labels(
-              x = "Area (%)",
-              y = paste(stringr::str_split(colnames(tp_cp_df)[6],"_")[[1]][2], stringr::str_split(colnames(tp_cp_df)[6],"_")[[1]][3], "(%)", sep = " ")
-            )%>% echarts4r::e_y_axis(nameTextStyle = list(fontSize = 13))%>%
+                     name = paste(stringr::str_split(colnames(tp_cp_df)[6],"_")[[1]][2], stringr::str_split(colnames(tp_cp_df)[6],"_")[[1]][3], sep = " "))%>%
+  echarts4r::e_tooltip(trigger = "axis")%>%
+  e_theme("sakura")%>%
+  e_axis_labels(x = "Area (%)",
+                y = paste(stringr::str_split(colnames(tp_cp_df)[6],"_")[[1]][2], stringr::str_split(colnames(tp_cp_df)[6],"_")[[1]][3], "(%)", sep = " "))%>%
+  echarts4r::e_y_axis(nameTextStyle = list(fontSize = 13))%>%
   echarts4r::e_x_axis(nameTextStyle = list(fontSize = 13))%>%
-          echarts4r::e_legend(textStyle = list(fontSize = 14))
+  echarts4r::e_legend(textStyle = list(fontSize = 14))
 
 gp_tp
-          
-"</div>"
+
+```
+</div>
 
 <!-- ######################### TP Plot and Table ################################# -->
 
-"<div style='clear: both;></div>"
+<div style="clear: both;"></div>
 
+```{r echo=FALSE, eval=has_phosphorus}
 # Wrap data frame in SharedData
 sd_tp= tp_cp_df %>% sf::st_as_sf() %>% sf::st_cast()
 sd_tp <- SharedData$new(sd_tp)
+```
 
-"<div id='wrapper-two'>"
+<div id='wrapper-two'>
+<div id='map-canvas'>
+<div style='clear: both;'></div>
 
-"<div id='map-canvas'>"
-
-<!-- ######################### TP Plot and Table ################################# -->
-
-"<div style='clear: both;'></div>"
-
+```{r, echo=FALSE, message=FALSE,warning=FALSE,eval=has_phosphorus}
 # # Create a filter input
 filter_slider("cumPercArea", "Filter map and table by watershed area(%) that generates most phosphorus.", sd_tp, column=~cumPercArea, step=1, width=600)
+```
 
-"<span style='color: #8e9aaf;'>(Known bug: Legend might disappear on filtering, please reload the page to get the legend back.)</span>"
 
+<span style='color: #8e9aaf;'>(Known bug: Legend might disappear on filtering, please reload the page to get the legend back.)</span>
+
+
+```{r, echo=FALSE, message=FALSE,warning=FALSE,eval=has_phosphorus}
 
 ggplotly(ggplot() +
     geom_sf(data = sd_tp, mapping = aes(fill = Total_Phosphorus_kg), show.legend = TRUE)  +coord_sf()+labs(fill = "Total Phosphorus (kg)") +ggthemes::theme_map()+scale_fill_viridis_c(option = "A",alpha = 0.9))
 
+```
 
+</div>
 
-
-"</div>"
-
-"<div id='tab-canvas'>"
+<div id="tab-canvas">
+```{r echo=FALSE,eval=has_phosphorus}
 
 DT::datatable(sd_tp,
               class = "display",
@@ -555,7 +561,6 @@ DT::datatable(sd_tp,
     backgroundPosition = 'center'
   )
 ```
-
 </div>
 </div>
 
@@ -604,8 +609,7 @@ fig
 
 #### Phosphorus timeseries
 
-```{r, echo=FALSE, message=FALSE,warning=FALSE} 
-if(file.exists(paste0("/geodata/weppcloud_runs/",params$proj_runid,"/wepp/runs/phosphorus.txt"))){
+```{r, echo=FALSE, message=FALSE,warning=FALSE,eval=has_phosphorus} 
 
   merged_daily_P_df_plt = merged_daily_df %>% dplyr::select(dplyr::any_of(c("Date", "SRP_tonnes_ebe",
                                           "PP_tonnes_ebe",
@@ -620,7 +624,6 @@ fig2 = plot_ly(colors = "viridis") %>%
   plotly::add_trace(x = ~Date, y = ~value, color = ~variable, data = merged_daily_P_df_plt,
                                         type = "scatter", mode= "line")
 fig2
-}
 
 ```
 
