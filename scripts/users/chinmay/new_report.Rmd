@@ -3,6 +3,7 @@ title: "A report generated for <span style='color: #6a4c93;'>`r params$proj_runi
 date: "`r Sys.Date()`"
 output: 
   cleanrmd::html_document_clean:
+    highlight: tango
     css: "styles.css"
     fig_caption: true
     theme: axist
