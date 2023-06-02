@@ -15,7 +15,7 @@ WEPPcloudR is an automated data analytics tool designed to enhance the user expe
 
 ## Installation
 
-No installation is required for this project. It is directly linked with [WEPPcloud](https://wepp.cloud/weppcloud/) where users can find a link to view the automated data alaytics product after their run is completed. 
+No installation is required for this project. It is directly linked with [WEPPcloud](https://wepp.cloud/weppcloud/) where users can find a link to view the automated data analytics product after their WEPPcloud run is completed. 
 
 ## Usage
 
